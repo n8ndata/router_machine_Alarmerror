@@ -363,16 +363,16 @@
                     <p class="text-xs text-slate-400 mt-0.5">จัดอันดับความผิดพลาดที่สร้างผลกระทบและ Downtime สะสมสูงสุด</p>
                 </div>
             </div>
-            <div class="overflow-x-auto border border-slate-800 rounded-xl">
-                <table class="w-full text-left text-xs">
-                    <thead>
-                        <tr class="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
-                            <th class="py-3 px-4">ลำดับ</th>
-                            <th class="py-3 px-4"># รหัส Code</th>
-                            <th class="py-3 px-4">กลุ่ม Alarm / Fault</th>
-                            <th class="py-3 px-4"># Severity</th>
-                            <th class="py-3 px-4 text-center"># (จำนวนครั้งที่เกิด)</th>
-                            <th class="py-3 px-4 text-right">เวลารวมสูญเสีย</th>
+            <div class="overflow-x-auto border border-slate-800 rounded-xl max-h-[400px]">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 z-20">
+                        <tr class="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider shadow-md">
+                            <th class="py-3 px-4 bg-slate-950">ลำดับ</th>
+                            <th class="py-3 px-4 bg-slate-950"># รหัส Code</th>
+                            <th class="py-3 px-4 bg-slate-950">กลุ่ม Alarm / Fault</th>
+                            <th class="py-3 px-4 bg-slate-950"># Severity</th>
+                            <th class="py-3 px-4 text-center bg-slate-950"># (จำนวนครั้งที่เกิด)</th>
+                            <th class="py-3 px-4 text-right bg-slate-950">เวลารวมสูญเสีย</th>
                         </tr>
                     </thead>
                     <tbody id="topAlarmsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
@@ -406,18 +406,18 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto max-h-[550px]">
                 <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-950/60 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                            <th class="py-3.5 px-4">ชื่อเครื่องจักร</th>
-                            <th class="py-3.5 px-4">Timestamp ล่าสุด</th>
-                            <th class="py-3.5 px-4"># รหัส Code</th>
-                            <th class="py-3.5 px-4">กลุ่ม Alarm / Fault</th>
-                            <th class="py-3.5 px-4"># Severity</th>
-                            <th class="py-3.5 px-4 text-right">เวลารวมสูญเสีย</th>
-                            <th class="py-3.5 px-4">รายละเอียด Alarm</th>
-                            <th class="py-3.5 px-4 text-center"># (จำนวนครั้งที่เกิด)</th>
+                    <thead class="sticky top-0 z-20">
+                        <tr class="bg-slate-950 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider shadow-md">
+                            <th class="py-3.5 px-4 bg-slate-950">ชื่อเครื่องจักร</th>
+                            <th class="py-3.5 px-4 bg-slate-950">TIMESTAMP ล่าสุด</th>
+                            <th class="py-3.5 px-4 bg-slate-950"># รหัส CODE</th>
+                            <th class="py-3.5 px-4 bg-slate-950">กลุ่ม ALARM / FAULT</th>
+                            <th class="py-3.5 px-4 bg-slate-950"># SEVERITY</th>
+                            <th class="py-3.5 px-4 text-right bg-slate-950">เวลารวมสูญเสีย</th>
+                            <th class="py-3.5 px-4 bg-slate-950">รายละเอียด ALARM</th>
+                            <th class="py-3.5 px-4 text-center bg-slate-950"># (จำนวนครั้งที่เกิด)</th>
                         </tr>
                     </thead>
                     <tbody id="alarmEventsTableBody" class="divide-y divide-slate-800/60 text-xs text-slate-300">
@@ -810,6 +810,7 @@ function doPost(e) {
              msg.indexOf("alarm") !== -1 || msg.indexOf("error") !== -1 ||
              msg.indexOf("sensor") !== -1 || msg.indexOf("interrupted") !== -1 ||
              msg.indexOf("timeout") !== -1 || msg.indexOf("broken") !== -1 ||
+             msg.indexOf("drill") !== -1 || msg.indexOf("break") !== -1 ||
              msg.indexOf("lenk") !== -1 || msg.indexOf("limit switch") !== -1 ||
              msg.indexOf("area sensor") !== -1 || msg.indexOf("machine stop") !== -1 ||
              msg.indexOf("clamped") !== -1 || msg.indexOf("spindle") !== -1 ||
