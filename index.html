@@ -1,1317 +1,1425 @@
 <!DOCTYPE html>
-<html lang="th" class="dark">
+<html lang="th" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROUTER Machine Analytics & Downtime Dashboard (KPI Report)</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CNC Industrial Log & Alarm Dashboard</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Google Fonts: Inter & Kanit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        },
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155',
+                            hover: '#334155'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Kanit', 'Inter', 'sans-serif'],
+                    }
                 }
             }
         }
     </script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
-        @media print {
-            @page {
-                size: A4 portrait;
-                margin: 8mm;
-            }
-            body {
-                background: white !important;
-                color: black !important;
-            }
-            body * { visibility: hidden; }
-            #reportModal, #reportModal * { visibility: visible; }
-            #reportModal { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100% !important; 
-                max-height: none !important;
-                height: auto !important;
-                overflow: visible !important;
-                background: white !important; 
-                color: black !important; 
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            #reportContent {
-                overflow: visible !important;
-                max-height: none !important;
-                height: auto !important;
-                display: block !important;
-            }
-            /* Make inputs, textareas, and labels 100% crystal clear and prevent overlap */
-            #reportModal textarea, #reportModal input {
-                background: #ffffff !important;
-                color: #0f172a !important;
-                border: 1px solid #cbd5e1 !important;
-                resize: none !important;
-                box-shadow: none !important;
-                font-size: 10pt !important;
-                font-weight: 500 !important;
-                line-height: 1.4 !important;
-                padding: 8px !important;
-                height: auto !important;
-                min-height: 50px !important;
-                opacity: 1 !important;
-                white-space: pre-wrap !important;
-                word-break: break-word !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            #reportModal label {
-                color: #0f172a !important;
-                font-weight: 700 !important;
-                font-size: 10pt !important;
-            }
-            #reportModal h3, #reportModal h4 {
-                color: #0f172a !important;
-                font-weight: 800 !important;
-            }
-            .no-print { display: none !important; }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Mobile Touch Optimizations */
+        button, label, select {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
-    <!-- Top Navigation Bar -->
-    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                <i class="fa-solid fa-microchip text-white text-lg"></i>
-            </div>
-            <div>
-                <h1 class="font-bold text-base sm:text-lg tracking-wide text-white">ROUTER Analytics & Downtime</h1>
-                <p class="text-xs text-slate-400">Cumulative Sync & Multi-Color Alarm Engine</p>
-            </div>
-        </div>
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-2">
+                <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+                        <i class="fa-solid fa-microchip text-lg sm:text-xl text-white"></i>
+                    </div>
+                    <div class="truncate">
+                        <div class="flex items-center space-x-2">
+                            <h1 class="font-bold text-sm sm:text-lg leading-none bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400 truncate">CNC Alarm & Event Monitor</h1>
+                            <!-- Live Status Indicator -->
+                            <span id="liveSyncStatusBadge" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-500 mr-1"></span> Offline
+                            </span>
+                        </div>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate hidden xs:block">วิเคราะห์ Log & Downtime รองรับทุกอุปกรณ์</p>
+                    </div>
+                </div>
 
-        <!-- Machine Selector & Action Buttons -->
-        <div class="flex flex-wrap items-center gap-2.5">
-            <!-- Machine Selector Dropdown -->
-            <div class="relative">
-                <select id="machineSelector" onchange="onMachineSelectionChanged()" class="bg-slate-800 border border-slate-700 hover:border-slate-600 text-cyan-400 font-medium text-xs sm:text-sm rounded-xl px-3.5 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition appearance-none cursor-pointer">
-                    <option value="ALL">ทุกเครื่องจักร (All Machines)</option>
-                    <option value="Tongtai No.10">Tongtai No.10</option>
-                    <option value="Tongtai No.11">Tongtai No.11</option>
-                    <option value="Tongtai No.12">Tongtai No.12</option>
-                    <option value="HitachiVia No.33">HitachiVia No.33</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                <!-- Machine Switcher Selector -->
+                <div class="hidden xl:flex items-center space-x-2 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/80 shrink-0">
+                    <i class="fa-solid fa-industry text-indigo-400 text-xs ml-1.5"></i>
+                    <span class="text-xs font-semibold text-slate-300">เครื่องจักร:</span>
+                    <select id="machineSelector" onchange="switchMachine(this.value)" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-500">
+                        <option value="CNC SoftC1 (TongTai)">CNC SoftC1 (TongTai)</option>
+                        <option value="CNC SoftC2 (Matsuura)">CNC SoftC2 (Matsuura)</option>
+                        <option value="CNC Lathe L1 (Doosan)">CNC Lathe L1 (Doosan)</option>
+                        <option value="Robot Cell A1 (FANUC)">Robot Cell A1 (FANUC)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+                    <!-- Google Sheets Connect Modal Trigger Button -->
+                    <button onclick="toggleGoogleSheetsModal()" title="เชื่อมต่อ Google Sheets" class="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 transition flex items-center justify-center space-x-1.5 text-xs font-semibold border border-emerald-500/40 active:scale-95">
+                        <i class="fa-solid fa-table text-sm text-emerald-400"></i>
+                        <span class="hidden md:inline">Google Sheets</span>
+                    </button>
+
+                    <!-- Upload File Button -->
+                    <label title="อัปโหลด Log File" class="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition cursor-pointer flex items-center justify-center space-x-1.5 text-xs font-semibold shadow-md shadow-indigo-600/30 active:scale-95">
+                        <i class="fa-solid fa-file-arrow-up text-sm"></i>
+                        <span class="hidden md:inline">อัปโหลด Log</span>
+                        <input type="file" id="logFileInput" accept=".txt,.log" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+
+                    <!-- Export Excel Button -->
+                    <button id="btnExportExcel" onclick="exportExcelReport()" title="ดาวน์โหลด Excel" class="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center justify-center space-x-1.5 text-xs font-semibold shadow-md shadow-emerald-600/30 border border-emerald-500/30 active:scale-95">
+                        <i class="fa-solid fa-file-excel text-sm text-emerald-100"></i>
+                        <span class="hidden lg:inline">Excel</span>
+                    </button>
+
+                    <!-- Export Report PDF Button -->
+                    <button id="btnExportPDF" onclick="exportKPIReport()" title="ออกรายงาน PDF" class="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition flex items-center justify-center space-x-1.5 text-xs font-semibold shadow-md shadow-sky-600/30 border border-sky-500/30 active:scale-95">
+                        <i class="fa-solid fa-file-pdf text-sm text-sky-100"></i>
+                        <span class="hidden sm:inline">รายงาน PDF</span>
+                    </button>
+
+                    <button id="refreshBtn" onclick="reloadLogs()" title="รีเซ็ตข้อมูล" class="h-9 w-9 sm:h-10 sm:w-auto sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700 flex items-center justify-center space-x-1.5 text-xs font-medium active:scale-95">
+                        <i class="fa-solid fa-rotate text-indigo-400 text-sm"></i>
+                        <span class="hidden xl:inline">รีเซ็ต</span>
+                    </button>
                 </div>
             </div>
-
-            <!-- Sync Status Indicator -->
-            <div id="syncBadge" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-xs font-medium text-slate-300">
-                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" id="syncDot"></span>
-                <span id="syncText">ยังไม่เชื่อมต่อ Sheet</span>
-            </div>
-
-            <!-- Sync Button -->
-            <button type="button" onclick="syncDataToGoogleSheets()" class="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs sm:text-sm px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <span>ซิงค์ลง Sheet</span>
-            </button>
-
-            <!-- Report Button -->
-            <button type="button" onclick="open8DReportModal()" class="flex items-center space-x-1.5 bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs sm:text-sm px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-600/20 active:scale-95 cursor-pointer">
-                <i class="fa-solid fa-file-invoice"></i>
-                <span>รายงาน KPI Report</span>
-            </button>
-
-            <!-- Sheet Settings Button -->
-            <button type="button" onclick="toggleSettingsModal()" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm px-4 py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/20 active:scale-95 cursor-pointer">
-                <i class="fa-solid fa-gear"></i>
-                <span>ตั้งค่า & โค้ด Sheet</span>
-            </button>
-
-            <!-- Upload Log Button -->
-            <label class="flex items-center space-x-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs sm:text-sm px-4 py-2.5 rounded-xl transition cursor-pointer shadow-lg shadow-cyan-600/20 active:scale-95">
-                <i class="fa-solid fa-folder-open"></i>
-                <span>โหลด Log File</span>
-                <input type="file" id="logFileInput" accept=".log,.txt" class="hidden" onchange="handleFileSelected(event)">
-            </label>
-
-            <!-- Clear Data -->
-            <button type="button" onclick="clearAllData()" class="p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/20 transition cursor-pointer" title="ล้างข้อมูลทั้งหมด">
-                <i class="fa-solid fa-trash-can text-sm"></i>
-            </button>
         </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 p-4 lg:p-8 space-y-6 max-w-[1600px] w-full mx-auto">
+    <!-- Mobile Machine Switcher Bar -->
+    <div class="xl:hidden bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-2 shrink-0">
+            <i class="fa-solid fa-industry text-indigo-400 text-xs"></i>
+            <span class="text-xs font-semibold text-slate-300">เครื่องจักร:</span>
+        </div>
+        <select onchange="switchMachine(this.value)" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg px-2.5 py-1 focus:outline-none flex-1 max-w-[220px]">
+            <option value="CNC SoftC1 (TongTai)">CNC SoftC1 (TongTai)</option>
+            <option value="CNC SoftC2 (Matsuura)">CNC SoftC2 (Matsuura)</option>
+            <option value="CNC Lathe L1 (Doosan)">CNC Lathe L1 (Doosan)</option>
+            <option value="Robot Cell A1 (FANUC)">Robot Cell A1 (FANUC)</option>
+        </select>
+    </div>
 
-        <!-- KPI Cards Row -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Machine Card -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+    <!-- Drag & Drop Zone Overlay / Banner -->
+    <div id="dropZone" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500/80 bg-slate-900/50 hover:bg-slate-900/80 rounded-2xl p-4 transition text-center cursor-pointer flex items-center justify-center space-x-3 group" onclick="document.getElementById('logFileInput').click()">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition">
+                <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+            </div>
+            <div class="text-left">
+                <p class="text-xs font-semibold text-slate-200">ลากและวางไฟล์ Log เครื่อง CNC (.txt หรือ .log) ที่นี่เพื่อวิเคราะห์</p>
+                <p class="text-[11px] text-slate-400">หรือคลิกที่บริเวณนี้เพื่อเลือกไฟล์จากคอมพิวเตอร์ของคุณ (กำลังใช้งานข้อมูลตัวอย่าง)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- KPI Executive Summary Cards (Added Total Downtime Card) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Total Events -->
+            <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-600 transition">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition"></div>
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">เครื่องจักรที่เลือก</p>
-                        <h3 id="kpiSelectedMachine" class="text-lg font-bold text-cyan-400 mt-1 truncate max-w-[200px]">ทุกเครื่องจักร</h3>
-                        <p class="text-[11px] text-slate-500 mt-0.5" id="kpiMachineSub">ข้อมูลสะสมทุกเครื่อง</p>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">เหตุการณ์ทั้งหมด</p>
+                        <h3 id="kpiTotalEvents" class="text-2xl font-extrabold text-white mt-1">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-1"><i class="fa-solid fa-file-lines text-indigo-400 mr-1"></i>จาก Log File</p>
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition duration-300">
-                        <i class="fa-solid fa-industry text-xl"></i>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <i class="fa-solid fa-list-check text-lg"></i>
                     </div>
                 </div>
-                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
             </div>
 
-            <!-- Total Downtime Card -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+            <!-- Total Downtime (NEW) -->
+            <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-600 transition border-rose-500/30">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/15 rounded-full blur-xl group-hover:bg-rose-500/25 transition"></div>
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">เวลาสูญเสียรวม (Downtime)</p>
-                        <h3 id="kpiTotalDowntime" class="text-2xl font-bold text-rose-400 mt-1">0 นาที</h3>
-                        <p class="text-[11px] text-slate-500 mt-0.5">คำนวณจาก Timestamp Delta</p>
+                        <p class="text-xs font-semibold text-rose-300 uppercase tracking-wider">เวลาสูญเสียรวม (Downtime)</p>
+                        <h3 id="kpiTotalDowntime" class="text-2xl font-extrabold text-rose-400 mt-1">0 ชม.</h3>
+                        <p class="text-[11px] text-rose-300/80 mt-1"><i class="fa-solid fa-clock-stop text-rose-400 mr-1"></i>เวลาหยุดการผลิตรวม</p>
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 group-hover:scale-110 transition duration-300">
-                        <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+                    <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                        <i class="fa-solid fa-stopwatch text-lg"></i>
                     </div>
                 </div>
-                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-orange-500"></div>
             </div>
 
-            <!-- Total Alarms Card -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+            <!-- Total Alarm Groups -->
+            <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-600 transition">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-500/10 rounded-full blur-xl group-hover:bg-purple-500/20 transition"></div>
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">จำนวนเหตุการณ์ผิดพลาด</p>
-                        <h3 id="kpiTotalAlarms" class="text-2xl font-bold text-amber-400 mt-1">0 รายการ</h3>
-                        <p id="kpiCriticalSub" class="text-[11px] text-slate-500 mt-0.5">Critical: 0 ครั้ง</p>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">กลุ่มการแจ้งเตือน</p>
+                        <h3 id="kpiTotalGroups" class="text-2xl font-extrabold text-white mt-1">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-1"><i class="fa-solid fa-object-group text-purple-400 mr-1"></i>จำแนกประเภท</p>
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition duration-300">
-                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                        <i class="fa-solid fa-layer-group text-lg"></i>
                     </div>
                 </div>
-                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-500"></div>
             </div>
 
-            <!-- Google Sheets Status Card -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+            <!-- Critical Alarms -->
+            <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-600 transition">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition"></div>
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">สถานะ Google Sheets</p>
-                        <h3 id="kpiSheetStatus" class="text-base font-bold text-slate-300 mt-1">ยังไม่ตั้งค่า URL</h3>
-                        <p class="text-[11px] text-slate-500 mt-0.5">แท็บ: History Data Alarm</p>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">วิกฤต (Critical)</p>
+                        <h3 id="kpiCriticalAlarms" class="text-2xl font-extrabold text-rose-400 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-1"><i class="fa-solid fa-triangle-exclamation text-rose-400 mr-1"></i>ส่งผลให้เครื่องหยุด</p>
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition duration-300">
-                        <i class="fa-solid fa-file-excel text-xl"></i>
+                    <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                        <i class="fa-solid fa-circle-exclamation text-lg"></i>
                     </div>
                 </div>
-                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+            </div>
+
+            <!-- Warning Alarms -->
+            <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-600 transition">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition"></div>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">คำเตือน / ขัดจังหวะ</p>
+                        <h3 id="kpiWarningAlarms" class="text-2xl font-extrabold text-amber-400 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-1"><i class="fa-solid fa-circle-pause text-amber-400 mr-1"></i>เซนเซอร์ / ขัดจังหวะ</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                        <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Charts Section -->
+        <!-- Charts Overview Section -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+            <!-- Bar Chart: Alarm Frequency -->
+            <div class="glass-card rounded-2xl p-5 lg:col-span-2 flex flex-col justify-between">
                 <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h2 class="font-bold text-sm sm:text-base text-white flex items-center space-x-2">
-                            <i class="fa-solid fa-chart-column text-cyan-400"></i>
-                            <span>ความถี่และ Downtime ของ Alarm (แยกสีตามระดับความรุนแรง)</span>
+                        <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-indigo-400"></i>
+                            ความถี่ของ Alarm แต่ละกลุ่ม
                         </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">แท่งกราฟแสดงสีเฉพาะตัว (แดง: Critical, ส้ม: Warning)</p>
-                    </div>
-                    <div class="flex items-center space-x-2 text-xs">
-                        <span class="inline-flex items-center px-2 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-medium">Critical</span>
-                        <span class="inline-flex items-center px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">Warning</span>
+                        <p class="text-xs text-slate-400">เปรียบเทียบจำนวนการเกิดเหตุการณ์ในแต่ละประเภท</p>
                     </div>
                 </div>
-                <div class="relative flex-1 min-h-[300px]">
-                    <canvas id="frequencyChart"></canvas>
+                <div class="relative h-64 w-full">
+                    <canvas id="alarmBarChart"></canvas>
                 </div>
             </div>
 
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
-                <div class="mb-4">
-                    <h2 class="font-bold text-sm sm:text-base text-white flex items-center space-x-2">
-                        <i class="fa-solid fa-chart-pie text-purple-400"></i>
-                        <span>สัดส่วนความรุนแรง (Severity Ratio)</span>
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">สัดส่วนแยกตามผลกระทบการหยุดเครื่อง</p>
-                </div>
-                <div class="relative flex-1 min-h-[260px] flex items-center justify-center">
-                    <canvas id="severityChart"></canvas>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800/80 text-[11px]">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full bg-rose-500"></span>
-                        <span class="text-slate-300">Critical (หยุดวิกฤต)</span>
+            <!-- Doughnut Chart: Distribution by Severity -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-indigo-400"></i>
+                            สัดส่วนความรุนแรง Alarm
+                        </h2>
+                        <p class="text-xs text-slate-400">แบ่งตามหมวดหมู่ประเภทการเตือนภัย</p>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-                        <span class="text-slate-300">Warning (เตือน)</span>
-                    </div>
+                </div>
+                <div class="relative h-64 w-full flex items-center justify-center">
+                    <canvas id="severityPieChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Alarm Events Table Section -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-            <div class="p-5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h2 class="font-bold text-sm sm:text-base text-white flex items-center space-x-2">
-                        <i class="fa-solid fa-table-list text-cyan-400"></i>
-                        <span>รายการ Log เหตุการณ์และ Downtime (เฉพาะ Alarm / Error)</span>
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">แสดงรายการความผิดพลาดของเครื่องจักรสะสมทุกเครื่องพร้อมคำนวณระยะเวลาสูญเสียจริง</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button type="button" onclick="exportToCSV()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition border border-slate-700 flex items-center space-x-1.5 cursor-pointer">
-                        <i class="fa-solid fa-file-csv text-emerald-400"></i>
-                        <span>Export CSV</span>
-                    </button>
-                    <button type="button" onclick="open8DReportModal()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-medium transition flex items-center space-x-1.5 shadow-lg shadow-purple-600/20 cursor-pointer">
-                        <i class="fa-solid fa-file-invoice"></i>
-                        <span>ออกรายงาน KPI</span>
-                    </button>
-                </div>
+        <!-- Filter & Search Controls -->
+        <div class="glass-card rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2 w-full md:w-auto">
+                <i class="fa-solid fa-filter text-indigo-400"></i>
+                <span class="text-sm font-semibold text-slate-200">ตัวกรองหมวดหมู่:</span>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full md:w-auto flex-1 justify-start md:justify-end">
+                <button onclick="setFilter('ALL')" class="filter-btn active-filter px-3 py-1.5 rounded-xl text-xs font-medium transition border border-indigo-500/50 bg-indigo-600/30 text-indigo-200 hover:bg-indigo-600/50 active:scale-95" data-filter="ALL">
+                    ทั้งหมด (<span id="countFilterAll">0</span>)
+                </button>
+                <button onclick="setFilter('CRITICAL')" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-medium transition border border-slate-700 bg-slate-800/80 text-slate-400 hover:text-white hover:border-slate-600 active:scale-95" data-filter="CRITICAL">
+                    <i class="fa-solid fa-circle text-[10px] text-rose-500 mr-1"></i>Critical (<span id="countFilterCritical">0</span>)
+                </button>
+                <button onclick="setFilter('WARNING')" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-medium transition border border-slate-700 bg-slate-800/80 text-slate-400 hover:text-white hover:border-slate-600 active:scale-95" data-filter="WARNING">
+                    <i class="fa-solid fa-circle text-[10px] text-amber-500 mr-1"></i>Warning (<span id="countFilterWarning">0</span>)
+                </button>
+                <button onclick="setFilter('INFO')" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-medium transition border border-slate-700 bg-slate-800/80 text-slate-400 hover:text-white hover:border-slate-600 active:scale-95" data-filter="INFO">
+                    <i class="fa-solid fa-circle text-[10px] text-sky-500 mr-1"></i>Info (<span id="countFilterInfo">0</span>)
+                </button>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-950/60 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                            <th class="py-3.5 px-4">#</th>
-                            <th class="py-3.5 px-4">ชื่อเครื่องจักร</th>
-                            <th class="py-3.5 px-4">เวลา (TIMESTAMP)</th>
-                            <th class="py-3.5 px-4">CODE</th>
-                            <th class="py-3.5 px-4">ชื่อรายการ ALARM</th>
-                            <th class="py-3.5 px-4">SEVERITY</th>
-                            <th class="py-3.5 px-4 text-right">เวลารวมสูญเสีย</th>
-                            <th class="py-3.5 px-4">รายละเอียด LOG (MESSAGE)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="alarmEventsTableBody" class="divide-y divide-slate-800/60 text-xs text-slate-300">
-                        <tr>
-                            <td colspan="8" class="py-8 text-center text-slate-500">
-                                <div class="flex flex-col items-center justify-center space-y-2">
-                                    <i class="fa-solid fa-folder-open text-2xl text-slate-600"></i>
-                                    <p>ยังไม่มีข้อมูล Log (กรุณากดปุ่ม "โหลด Log File" ด้านบน)</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Search box -->
+            <div class="relative w-full md:w-64">
+                <input type="text" id="searchInput" onkeyup="renderGroupColumns()" placeholder="ค้นหากลุ่มหรือข้อความ..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
+            </div>
+        </div>
+
+        <!-- Alarm Groups Columns Container (Kanban-style Group View) -->
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-border-all text-indigo-400"></i>
+                    คอลัมน์กลุ่ม Alarm ที่รวบรวมไว้ (Alarm Clusters)
+                </h2>
+                <span class="text-xs text-slate-400">คลิกที่การ์ดเพื่อดูรายละเอียดประวัติทั้งหมด</span>
+            </div>
+
+            <!-- Group Columns Layout -->
+            <div id="alarmGroupContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- Group cards will be dynamically populated here -->
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-slate-900 border-t border-slate-800 py-4 px-6 text-center text-xs text-slate-500">
-        ROUTER Machine Analytics & Downtime Sync Engine • Multi-Color Alarm Separation & KPI Report
-    </footer>
-
-    <!-- Report Modal -->
-    <div id="reportModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 md:p-8 shadow-2xl space-y-6 max-h-[92vh] flex flex-col my-auto">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-800 flex-shrink-0">
+    <!-- Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+        <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                        <i class="fa-solid fa-file-invoice text-lg"></i>
+                    <div id="modalIconContainer" class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                        <i id="modalIcon" class="fa-solid fa-bell"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-lg text-white">รายงานวิเคราะห์ความผิดพลาดและมาตรการแก้ไข (KPI Report)</h3>
-                        <p class="text-xs text-slate-400">รายงานสรุปปัญหา Downtime และแนวทางแก้ไขเพื่อประเมินประสิทธิภาพเครื่องจักร</p>
+                        <h3 id="modalTitle" class="text-base font-bold text-white">รายละเอียดกลุ่ม Alarm</h3>
+                        <p id="modalSubtitle" class="text-xs text-slate-400">ข้อมูลรายการ Log ทั้งหมดในกลุ่มนี้</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-2 no-print">
-                    <button type="button" onclick="window.print()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 shadow-lg shadow-cyan-600/20 cursor-pointer">
-                        <i class="fa-solid fa-print"></i>
-                        <span>พิมพ์ / Save PDF</span>
-                    </button>
-                    <button type="button" onclick="close8DReportModal()" class="text-slate-400 hover:text-white transition p-2 cursor-pointer">
-                        <i class="fa-solid fa-xmark text-lg"></i>
-                    </button>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body Content -->
+            <div class="p-5 flex-1 overflow-y-auto space-y-3">
+                <div class="flex items-center justify-between text-xs text-slate-400 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+                    <span>จำนวนการเกิดเหตุการณ์ทั้งหมด: <strong id="modalCount" class="text-white">0</strong> ครั้ง</span>
+                </div>
+                <div id="modalLogList" class="space-y-2">
+                    <!-- Dynamic Log Items -->
                 </div>
             </div>
 
-            <!-- Report Body Content -->
-            <div id="reportContent" class="flex-1 overflow-y-auto space-y-6 text-slate-200 text-xs sm:text-sm pr-1">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                    <div>
-                        <p class="text-[11px] text-slate-400">เครื่องจักรเป้าหมาย:</p>
-                        <p id="repMachineName" class="font-bold text-cyan-400 text-sm mt-0.5">ทุกเครื่องจักร</p>
-                    </div>
-                    <div>
-                        <p class="text-[11px] text-slate-400">เวลาสูญเสียรวม (Total Downtime):</p>
-                        <p id="repTotalDowntime" class="font-bold text-rose-400 text-sm mt-0.5">0 นาที</p>
-                    </div>
-                    <div>
-                        <p class="text-[11px] text-slate-400">เหตุการณ์วิกฤต (Critical Alarms):</p>
-                        <p id="repCriticalCount" class="font-bold text-amber-400 text-sm mt-0.5">0 ครั้ง</p>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <h4 class="font-bold text-sm text-cyan-400 flex items-center space-x-2 border-b border-slate-800 pb-2">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <span>D1 - D3: การจำแนกปัญหาและการแก้ไขเบื้องต้น (Containment Actions)</span>
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 space-y-2">
-                            <label class="block font-semibold text-slate-300 text-xs">D1-D2: สรุปปัญหาหลักที่พบบ่อยที่สุด (Problem Description)</label>
-                            <textarea id="repProblemDesc" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">ตรวจพบความผิดพลาดวิกฤต (Critical Alarm) และข้อผิดพลาดซ้ำซ้อนในระบบควบคุม ROUTER ส่งผลให้เกิด Downtime สะสม</textarea>
-                        </div>
-                        <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 space-y-2">
-                            <label class="block font-semibold text-slate-300 text-xs">D3: มาตรการควบคุมชั่วคราว (Immediate Containment Action)</label>
-                            <textarea id="repContainment" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">1. แจ้งซ่อมบำรุงตรวจสอบหน้างานทันทีเมื่อเกิดรหัส Error\n2. ตรวจสอบสภาพเครื่องมือตัด (Tooling) และเซ็นเซอร์พื้นที่ (Area Sensor)\n3. รีเซ็ตระบบควบคุมและเคลียร์โพรโทคอลเก่า</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <h4 class="font-bold text-sm text-purple-400 flex items-center space-x-2 border-b border-slate-800 pb-2">
-                        <i class="fa-solid fa-magnifying-glass-chart"></i>
-                        <span>D4 - D5: วิเคราะห์สาเหตุรากเหง้าและมาตรการถาวร (Root Cause & Corrective Action)</span>
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 space-y-2">
-                            <label class="block font-semibold text-slate-300 text-xs">D4: วิเคราะห์สาเหตุรากเหง้า (Root Cause Analysis)</label>
-                            <textarea id="repRootCause" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">เกิดจากข้อผิดพลาดในการสื่อสารข้อมูลภายใน (Internal Data Error) และการใช้งานโปรแกรมตัดเฉือนเกินเวลามาตรฐาน ทำให้ระบบเซ็นเซอร์ตัดการทำงาน</textarea>
-                        </div>
-                        <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 space-y-2">
-                            <label class="block font-semibold text-slate-300 text-xs">D5-D6: มาตรการแก้ไขถาวรและการป้องกันการเกิดซ้ำ (Permanent Action)</label>
-                            <textarea id="repPermanentAction" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">1. อัปเดตเฟิร์มแวร์ระบบควบคุมและตรวจสอบสายสัญญาณ ROUTER\n2. กำหนดรอบการทำความสะอาดและสอบเทียบเซ็นเซอร์ทุกสัปดาห์\n3. อ็อบติไมส์โปรแกรม ROUTER ลดการเกิด Dead Lock</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <h4 class="font-bold text-sm text-emerald-400 flex items-center space-x-2">
-                        <i class="fa-solid fa-list-check"></i>
-                        <span>สรุปรายการ Alarm ที่ต้องให้ความสำคัญสูงสุด (Top Alarms Summary - รวมรายการที่เหมือนกัน)</span>
-                    </h4>
-                    <div class="overflow-x-auto border border-slate-800 rounded-xl">
-                        <table class="w-full text-left text-xs">
-                            <thead>
-                                <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
-                                    <th class="p-2.5">ลำดับ</th>
-                                    <th class="p-2.5">รหัส Code</th>
-                                    <th class="p-2.5">ชื่อรายการ Alarm</th>
-                                    <th class="p-2.5">ระดับความรุนแรง</th>
-                                    <th class="p-2.5 text-center">จำนวนครั้งที่เกิด</th>
-                                    <th class="p-2.5 text-right">เวลารวมสูญเสีย</th>
-                                </tr>
-                            </thead>
-                            <tbody id="repTableBody" class="divide-y divide-slate-800/50">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800 flex-shrink-0 no-print">
-                <button type="button" onclick="close8DReportModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition text-xs cursor-pointer">ปิดหน้าต่าง</button>
-                <button type="button" onclick="window.print()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold transition text-xs shadow-lg shadow-purple-600/20 cursor-pointer">พิมพ์ / Save PDF</button>
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end">
+                <button onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition border border-slate-700">
+                    ปิดหน้าต่าง
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Google Sheets Settings & Apps Script Combined Modal -->
-    <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 md:p-8 shadow-2xl space-y-6 max-h-[92vh] flex flex-col my-auto">
+    <!-- Google Sheets Sync Configuration Modal -->
+    <div id="googleSheetsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+        <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200">
             <!-- Modal Header -->
-            <div class="flex items-center justify-between pb-4 border-b border-slate-800 flex-shrink-0">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                        <i class="fa-solid fa-sliders text-lg"></i>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-table"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-lg text-white">ตั้งค่าการเชื่อมต่อ Google Sheets & คู่มือการใช้งาน</h3>
-                        <p class="text-xs text-slate-400">ตั้งค่า Web App URL พร้อมคู่มือติดตั้งโค้ด Apps Script และขั้นตอนอย่างละเอียด</p>
+                        <h3 class="text-base font-bold text-white">ตั้งค่า Google Sheets Real-time Sync</h3>
+                        <p class="text-xs text-slate-400">เชื่อมต่อ Google Apps Script Web App เพื่อบันทึกข้อมูลเข้า Spreadsheet อัตโนมัติ</p>
                     </div>
                 </div>
-                <button type="button" onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white transition p-2 cursor-pointer">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+                <button onclick="toggleGoogleSheetsModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <!-- Modal Content (Scrollable) -->
-            <div class="flex-1 overflow-y-auto space-y-6 text-slate-200 text-xs sm:text-sm pr-1">
-                <!-- Section 1: URL Settings Input -->
-                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
-                    <label class="block font-bold text-slate-200 text-xs flex items-center space-x-2">
-                        <i class="fa-solid fa-link text-cyan-400"></i>
-                        <span>Google Apps Script Web App URL:</span>
+            <!-- Modal Form Body -->
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        <i class="fa-solid fa-link text-emerald-400 mr-1"></i>Google Apps Script Web App URL:
                     </label>
-                    <div class="flex gap-2">
-                        <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                        <button type="button" onclick="saveSheetSettings()" class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition text-xs shadow-lg shadow-cyan-600/20 cursor-pointer flex-shrink-0">
-                            <i class="fa-solid fa-floppy-disk mr-1"></i> บันทึก & โหลดเครื่อง
-                        </button>
-                    </div>
-                    <p class="text-[11px] text-slate-400">วาง URL ที่ได้จากการ Deploy Google Apps Script เพื่อเปิดใช้งานการดึงชื่อเครื่องและการซิงค์ข้อมูล</p>
+                    <input type="url" id="gasWebAppUrl" placeholder="https://script.google.com/macros/s/AKfycbx.../exec" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono transition shadow-inner">
+                    <p class="text-[11px] text-slate-400 mt-1.5">
+                        วาง URL ที่ได้จากการ Deploy เป็น <strong>Web App (Execute as Me, Anyone access)</strong> ใน Google Apps Script
+                    </p>
                 </div>
 
-                <!-- Section 2: Step-by-Step Installation Guide -->
-                <div class="space-y-3">
-                    <h4 class="font-bold text-sm text-amber-400 flex items-center space-x-2 border-b border-slate-800 pb-2">
-                        <i class="fa-solid fa-book-open"></i>
-                        <span>คู่มือขั้นตอนการติดตั้งใน Google Sheets (Setup Guide)</span>
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div class="bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/80 space-y-1">
-                            <p class="font-bold text-cyan-400">1. เตรียม Google Sheet</p>
-                            <p class="text-slate-400 leading-relaxed">สร้างแท็บชื่อ <code class="text-emerald-400">M/C</code> ไว้สำหรับเก็บรายชื่อเครื่องจักรในคอลัมน์ A (เริ่มแถวที่ 2)</p>
-                        </div>
-                        <div class="bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/80 space-y-1">
-                            <p class="font-bold text-cyan-400">2. เปิด Script Editor</p>
-                            <p class="text-slate-400 leading-relaxed">ไปที่เมนู <code class="text-amber-300">ส่วนขยาย (Extensions)</code> &gt; <code class="text-amber-300">Apps Script</code> ใน Google Sheets ของคุณ</p>
-                        </div>
-                        <div class="bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/80 space-y-1">
-                            <p class="font-bold text-cyan-400">3. วางโค้ด Apps Script</p>
-                            <p class="text-slate-400 leading-relaxed">กดปุ่ม <strong>"คัดลอกโค้ด"</strong> ด้านล่าง แล้วนำไปวางแทนที่ในไฟล์ <code class="text-indigo-300">Code.gs</code> ทั้งหมด แล้วกด บันทึก</p>
-                        </div>
-                        <div class="bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/80 space-y-1">
-                            <p class="font-bold text-cyan-400">4. Deploy เป็น Web App</p>
-                            <p class="text-slate-400 leading-relaxed">กด <code class="text-emerald-400">อนุมัติการใช้งาน (Deploy)</code> &gt; <code class="text-emerald-400">การทำให้ใช้งานได้ใหม่</code> ตั้งค่า <strong>Who has access: Anyone</strong> แล้วคัดลอก URL มาวางในช่องด้านบน</p>
-                        </div>
+                <!-- Auto Sync Toggle -->
+                <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                    <div>
+                        <p class="text-xs font-semibold text-white">เปิดการซิงค์อัตโนมัติ (Real-time Live Sync)</p>
+                        <p class="text-[11px] text-slate-400">ส่งข้อมูลเข้า Google Sheets ทันทีที่มีการอัปโหลดไฟล์ Log ใหม่</p>
                     </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="autoSyncToggle" class="sr-only peer" onchange="toggleAutoSync(this.checked)">
+                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
                 </div>
 
-                <!-- Section 3: Google Apps Script Code Block -->
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <h4 class="font-bold text-sm text-indigo-400 flex items-center space-x-2">
-                            <i class="fa-solid fa-code"></i>
-                            <span>โค้ด Google Apps Script (Code.gs)</span>
-                        </h4>
-                        <button type="button" onclick="copyAppsScriptCode()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-medium transition flex items-center space-x-1.5 shadow-lg shadow-indigo-600/20 cursor-pointer">
-                            <i class="fa-solid fa-copy"></i>
-                            <span>คัดลอกโค้ด</span>
-                        </button>
-                    </div>
+                <!-- Google Apps Script Source Code & Copy Utility -->
+                <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/80">
+                    <!-- Toggle Show/Hide Script Code Header Button -->
+                    <button type="button" onclick="toggleGasScriptVisibility()" class="w-full p-3 bg-slate-900 hover:bg-slate-800/80 transition border-b border-slate-800 flex items-center justify-between text-left group">
+                        <span class="text-xs font-bold text-slate-200 flex items-center">
+                            <i class="fa-solid fa-code text-indigo-400 mr-2"></i>
+                            <span id="gasScriptToggleLabel">ดูโค้ด Google Apps Script (Code.gs)</span>
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[11px] text-slate-400 group-hover:text-slate-300">คลิกเพื่อแสดง/ซ่อน</span>
+                            <i id="gasScriptToggleIcon" class="fa-solid fa-chevron-down text-xs text-indigo-400 transition-transform duration-200"></i>
+                        </div>
+                    </button>
 
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-emerald-400 selection:bg-emerald-500 selection:text-slate-950 max-h-[300px] overflow-y-auto">
-                        <pre id="gasCodeDisplay">
-// =================================================================
-// Google Apps Script for ROUTER Machine Alarm & Downtime Sync Engine
-// ทำความสะอาดข้อมูลเก่าทั้งหมดแล้วสร้างบล็อกใหม่แบบไม่ซ้ำ (De-duplicate & Clean)
-// =================================================================
-
-function doGet(e) {
-  var action = e ? e.parameter.action : "";
-  var callback = e ? e.parameter.callback : "";
-
-  if (action === "getMachines" || callback) {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("M/C");
-    var machines = [];
-    if (sheet) {
-      var lastRow = sheet.getLastRow();
-      if (lastRow >= 1) {
-        var values = sheet.getRange(1, 1, lastRow, 1).getValues();
-        values.forEach(function(row) {
-          var val = row[0] ? row[0].toString().trim() : "";
-          if (val && val !== "จำนวนเครื่อง/ชื่อ" && val !== "ชื่อเครื่องจักร" && val !== "Machine Name") {
-            machines.push(val);
-          }
-        });
-      }
-    }
-    
-    var output = JSON.stringify({ result: "success", machines: machines });
-    if (callback) {
-      return ContentService.createTextOutput(callback + "(" + output + ")")
-        .setMimeType(ContentService.MimeType.JAVASCRIPT);
-    }
-    return ContentService.createTextOutput(output).setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  return ContentService.createTextOutput("ROUTER Sync Engine Ready");
-}
-
-function doPost(e) {
+                    <!-- Collapsible Container (Hidden by Default) -->
+                    <div id="gasScriptContentBlock" class="hidden transition-all duration-200">
+                        <div class="p-2.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+                            <span class="text-[11px] font-mono text-slate-400">Code.gs Script Content</span>
+                            <button onclick="copyGasScriptCode()" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/40 text-[11px] font-semibold transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+                                <i class="fa-regular fa-copy"></i>
+                                <span id="copyCodeBtnText">คัดลอกโค้ดไปใช้งาน</span>
+                            </button>
+                        </div>
+                        <div class="p-3 max-h-48 overflow-y-auto bg-slate-950">
+                            <pre id="gasSourceCodeBlock" class="text-[10px] font-mono text-emerald-400/90 leading-relaxed select-all">function doPost(e) {
   var lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-
+  lock.tryLock(10000);
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var payload = JSON.parse((e && e.postData && e.postData.contents) || "{}");
-    var rawEvents = payload.events || [];
-
-    var TARGET_SHEET_NAME = "History Data Alarm";
-    var targetSheet = ss.getSheetByName(TARGET_SHEET_NAME);
-    if (!targetSheet) targetSheet = ss.insertSheet(TARGET_SHEET_NAME);
-
-    var headers = [
-      "ชื่อเครื่องจักร", "Timestamp ล่าสุด",
-      "รหัส Code", "กลุ่ม Alarm / Fault", "Severity",
-      "เวลารวมสูญเสีย", "รายละเอียด Alarm (จำนวนครั้งที่เกิด)"
-    ];
-
-    function cleanText(value, fallback) {
-      var text = value === null || value === undefined ? "" : String(value).trim();
-      return text || (fallback !== undefined ? fallback : "-");
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    if (sheet.getLastRow() === 0) {
+      var headers = ["วัน-เวลาบันทึก", "ชื่อเครื่องจักร", "Timestamp เกิดเหตุ", "รหัส Code", "กลุ่ม Alarm", "Severity", "เวลาสูญเสีย (นาที)", "เวลาสูญเสีย (อ่านง่าย)", "ข้อความ Log"];
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length).setBackground("#1e293b").setFontColor("#ffffff").setFontWeight("bold");
+      sheet.setFrozenRows(1);
     }
-    function norm(value) {
-      return cleanText(value, "").toLowerCase().replace(/\s+/g, " ");
-    }
-    function makeKey(machine, code, alarmName) {
-      return [norm(machine), norm(code), norm(alarmName)].join("|||");
-    }
-    function machineSort(a, b) {
-      return a.localeCompare(b, "en", { numeric: true, sensitivity: "base" });
-    }
-    function latestTimestamp(a, b) {
-      var da = new Date(a), db = new Date(b);
-      if (!isNaN(db.getTime()) && (isNaN(da.getTime()) || db > da)) return b;
-      return a || b || "-";
-    }
-    function severityRank(value) {
-      var s = cleanText(value, "").toUpperCase();
-      return s === "CRITICAL" ? 2 : (s === "WARNING" ? 1 : 0);
-    }
-
-    var machineRows = {};
-
-    var incomingEvents = rawEvents.filter(function(ev) {
-      var sev = (ev.severity || "").toString().toUpperCase();
-      var msg = (ev.message || "").toString().toLowerCase();
-      return sev === "CRITICAL" || sev === "WARNING" ||
-             msg.indexOf("alarm") !== -1 || msg.indexOf("error") !== -1 ||
-             msg.indexOf("sensor") !== -1 || msg.indexOf("interrupted") !== -1 ||
-             msg.indexOf("timeout") !== -1 || msg.indexOf("broken") !== -1;
+    var payload = JSON.parse(e.postData.contents);
+    var syncTime = new Date();
+    var machineId = payload.machineId || "CNC Machine";
+    var events = payload.events || [];
+    events.forEach(function(item) {
+      sheet.appendRow([
+        syncTime, machineId, item.timestamp||"-", item.code||"-",
+        item.groupName||"-", item.severity||"INFO",
+        Math.round((item.downtimeMinutes||0)*10)/10,
+        formatMinutesToDHMS(item.downtimeMinutes||0),
+        item.message||"-"
+      ]);
     });
-
-    incomingEvents.forEach(function(item) {
-      var machine = cleanText(item.machine || item.machineName, "Tongtai No.10");
-      var alarmName = cleanText(item.groupName || item.message, "Unknown Alarm");
-      var code = cleanText(item.code, "-");
-      var key = makeKey(machine, code, alarmName);
-
-      if (!machineRows[machine]) machineRows[machine] = {};
-
-      if (!machineRows[machine][key]) {
-        machineRows[machine][key] = {
-          machine: machine,
-          timestamp: cleanText(item.timestamp),
-          code: code,
-          groupName: alarmName,
-          severity: cleanText(item.severity, "WARNING"),
-          totalDowntime: 0,
-          message: cleanText(item.message)
-        };
-      }
-
-      var agg = machineRows[machine][key];
-      agg.totalDowntime += Number(item.downtimeMinutes || 0) || 0;
-      if (item.timestamp) agg.timestamp = latestTimestamp(agg.timestamp, item.timestamp);
-      if (severityRank(item.severity) > severityRank(agg.severity)) agg.severity = item.severity;
-      if (item.message) agg.message = item.message;
-    });
-
-    var outputRows = [];
-    var headerRows = [];
-    var machineNames = Object.keys(machineRows).sort(machineSort);
-
-    machineNames.forEach(function(machine) {
-      var keys = Object.keys(machineRows[machine]).sort(function(a, b) {
-        var ra = machineRows[machine][a], rb = machineRows[machine][b];
-        return String(ra.code).localeCompare(String(rb.code), "en", { numeric: true, sensitivity: "base" }) ||
-               String(ra.groupName).localeCompare(String(rb.groupName), "th", { sensitivity: "base" });
-      });
-
-      if (!keys.length) return;
-
-      var headerRowNumber = outputRows.length + 1;
-      outputRows.push(headers.slice());
-      headerRows.push(headerRowNumber);
-
-      keys.forEach(function(key) {
-        var item = machineRows[machine][key];
-        outputRows.push([
-          item.machine,
-          item.timestamp,
-          item.code,
-          item.groupName,
-          item.severity,
-          formatMinutesToHoursOrMinutes(item.totalDowntime),
-          item.message
-        ]);
-      });
-
-      outputRows.push(["", "", "", "", "", "", ""]);
-    });
-
-    targetSheet.clearContents();
-    targetSheet.clearFormats();
-
-    if (outputRows.length > 0) {
-      targetSheet.getRange(1, 1, outputRows.length, headers.length).setValues(outputRows);
-
-      headerRows.forEach(function(rowNumber) {
-        targetSheet.getRange(rowNumber, 1, 1, headers.length)
-          .setBackground("#c6d9f1")
-          .setFontColor("#000000")
-          .setFontWeight("bold");
-      });
-
-      targetSheet.getRange(1, 5, outputRows.length, 1).setHorizontalAlignment("center");
-      targetSheet.getRange(1, 6, outputRows.length, 1).setHorizontalAlignment("right");
-    }
-
-    return ContentService.createTextOutput(JSON.stringify({
-      result: "success",
-      machines: machineNames.length,
-      message: "ล้างข้อมูลซ้ำและจัดเรียงบล็อกเครื่องจักรใหม่เรียบร้อยแล้ว"
-    })).setMimeType(ContentService.MimeType.JSON);
-
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ result: "error", error: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } finally {
-    lock.releaseLock();
-  }
+    return ContentService.createTextOutput(JSON.stringify({result:"success"})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({result:"error", error:err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  } finally { lock.releaseLock(); }
 }
-
-function formatMinutesToHoursOrMinutes(totalMin) {
-  if (!totalMin || totalMin <= 0) return "0 นาที";
-  if (totalMin >= 60) {
-    var hours = Math.floor(totalMin / 60);
-    var mins = Math.round(totalMin % 60);
-    return mins > 0 ? hours + " ชม. " + mins + " นาที" : hours + " ชม.";
-  }
-  return Math.round(totalMin * 10) / 10 + " นาที";
-}
-                        </pre>
+function formatMinutesToDHMS(min) {
+  if (!min || min <= 0) return "0 นาที";
+  var h = Math.floor(min / 60), m = Math.round(min % 60);
+  return h > 0 ? h + " ชม. " + m + " นาที" : m + " นาที";
+}</pre>
+                        </div>
+                        <div class="p-2.5 bg-slate-900/60 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
+                            <p class="font-semibold text-slate-300">วิธีติดตั้งแบบง่ายใน 30 วินาที:</p>
+                            <ol class="list-decimal list-inside space-y-0.5 text-slate-400 pl-1">
+                                <li>กดปุ่ม <strong class="text-indigo-300">"คัดลอกโค้ดไปใช้งาน"</strong> ด้านบน</li>
+                                <li>เปิด Google Sheets ➔ เมนู <strong class="text-slate-300">ส่วนขยาย (Extensions)</strong> ➔ <strong class="text-slate-300">Apps Script</strong> วางโค้ดแล้วบันทึก</li>
+                                <li>กด <strong class="text-slate-300">ทำให้ใช้งานได้ (Deploy)</strong> ➔ <strong class="text-slate-300">การทำให้ใช้งานได้รายการใหม่ (New Deployment)</strong></li>
+                                <li>เลือกประเภทเป็น <strong class="text-emerald-300">เว็บแอป (Web App)</strong> ➔ ตั้งสิทธิ์เข้าถึงเป็น <strong class="text-emerald-300">ทุกคน (Anyone)</strong></li>
+                                <li>ก๊อปปี้ URL ที่ได้มาวางในช่องด้านบนแล้วกดส่งข้อมูลได้ทันที</li>
+                            </ol>
+                        </div>
                     </div>
+                </div>
+
+                <div id="syncLogMessage" class="text-xs font-medium hidden p-2.5 rounded-lg"></div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
+                <button onclick="syncDataToGoogleSheets()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/30 flex items-center space-x-2 active:scale-95">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>ส่งข้อมูลเข้า Google Sheets ทันที</span>
+                </button>
+                <button onclick="toggleGoogleSheetsModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition border border-slate-700 active:scale-95">
+                    ปิด
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Executive Report Preview Modal (Built-in On-Screen Printable Area) -->
+    <div id="reportModal" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden print:border-none print:shadow-none">
+            <!-- Header Controls -->
+            <div class="p-3.5 sm:p-4 border-b border-slate-800 bg-slate-900 flex items-center justify-between no-print gap-2">
+                <div class="flex items-center space-x-2 text-white font-bold text-xs sm:text-sm truncate">
+                    <i class="fa-solid fa-file-invoice text-emerald-400 text-base sm:text-lg shrink-0"></i>
+                    <span class="truncate">รายงานสรุปสถิติ KPI (Print Preview)</span>
+                </div>
+                <div class="flex items-center space-x-2 shrink-0">
+                    <button onclick="triggerPrintProcess()" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/30 flex items-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-print"></i>
+                        <span>พิมพ์ / PDF</span>
+                    </button>
+                    <button onclick="closeReportModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center justify-center active:scale-95">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Modal Footer Buttons -->
-            <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800 flex-shrink-0">
-                <button type="button" onclick="toggleSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition text-xs cursor-pointer">ปิดหน้าต่าง</button>
+            <!-- Printable Sheet Paper Container -->
+            <div class="p-3 sm:p-8 overflow-y-auto flex-1 bg-slate-950 print:bg-white print:p-0 print:overflow-visible">
+                <div id="printableReportSheet" class="bg-white text-slate-900 p-4 sm:p-8 rounded-xl max-w-3xl mx-auto shadow-xl print:shadow-none print:max-w-none print:w-full print:rounded-none">
+                    <!-- Report Top Header -->
+                    <div class="border-b-2 border-slate-900 pb-3 mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
+                        <div>
+                            <h1 class="text-lg sm:text-2xl font-bold text-slate-900">รายงานสรุปสถิติและวิเคราะห์ Alarm เครื่อง CNC</h1>
+                            <p class="text-xs sm:text-sm text-slate-600 mt-0.5">SOFTC1 Industrial Log & Executive KPI Analytics Report</p>
+                        </div>
+                        <div class="text-left sm:text-right text-[11px] sm:text-xs text-slate-500">
+                            <p>วันที่พิมพ์รายงาน: <span id="reportPrintDate" class="font-bold text-slate-800"></span></p>
+                            <p>เครื่องจักร: <span class="font-bold text-slate-800">SOFTC1 (TongTai)</span></p>
+                        </div>
+                    </div>
+
+                    <!-- KPI Statistics Box Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
+                        <div class="border border-slate-300 p-2 sm:p-3 rounded-lg bg-slate-50 text-center">
+                            <p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase">เหตุการณ์ทั้งหมด</p>
+                            <p id="repTotalEvents" class="text-base sm:text-lg font-extrabold text-slate-800 mt-0.5">0</p>
+                        </div>
+                        <div class="border border-rose-300 p-2 sm:p-3 rounded-lg bg-rose-50 text-center">
+                            <p class="text-[9px] sm:text-[10px] text-rose-600 font-bold uppercase">เวลาสูญเสียรวม</p>
+                            <p id="repTotalDowntime" class="text-base sm:text-lg font-extrabold text-rose-700 mt-0.5">0 ชม.</p>
+                        </div>
+                        <div class="border border-slate-300 p-2 sm:p-3 rounded-lg bg-slate-50 text-center">
+                            <p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase">กลุ่ม Alarm ทั้งหมด</p>
+                            <p id="repTotalGroups" class="text-base sm:text-lg font-extrabold text-slate-800 mt-0.5">0</p>
+                        </div>
+                        <div class="border border-rose-300 p-2 sm:p-3 rounded-lg bg-rose-50 text-center">
+                            <p class="text-[9px] sm:text-[10px] text-rose-600 font-bold uppercase">วิกฤต (Critical)</p>
+                            <p id="repCritical" class="text-base sm:text-lg font-extrabold text-rose-700 mt-0.5">0</p>
+                        </div>
+                        <div class="border border-amber-300 p-2 sm:p-3 rounded-lg bg-amber-50 text-center col-span-2 sm:col-span-1">
+                            <p class="text-[9px] sm:text-[10px] text-amber-600 font-bold uppercase">คำเตือน (Warning)</p>
+                            <p id="repWarning" class="text-base sm:text-lg font-extrabold text-amber-700 mt-0.5">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Group Details Table -->
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 mb-2 border-b border-slate-300 pb-1">รายละเอียดสรุปตามกลุ่ม Alarm และเวลาสูญเสีย</h3>
+                    <div class="overflow-x-auto mb-4 sm:mb-6">
+                        <table class="w-full text-left text-[11px] sm:text-xs border-collapse min-w-[500px]">
+                            <thead>
+                                <tr class="bg-slate-100 border-b border-slate-300 text-slate-700">
+                                    <th class="p-1.5 sm:p-2 w-8">#</th>
+                                    <th class="p-1.5 sm:p-2">ชื่อกลุ่ม Alarm</th>
+                                    <th class="p-1.5 sm:p-2">ระดับความรุนแรง</th>
+                                    <th class="p-1.5 sm:p-2">หมวดหมู่</th>
+                                    <th class="p-1.5 sm:p-2 text-right">จำนวนครั้งที่เกิด</th>
+                                    <th class="p-1.5 sm:p-2 text-right text-rose-700">เวลาสูญเสียรวม</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <!-- Generated Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Matrix Timeline per Alarm Group Table -->
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 mb-2 border-b border-slate-300 pb-1 mt-4">ตารางเวลาเกิดเหตุแยกตามกลุ่ม Alarm (Event & Downtime Matrix)</h3>
+                    <div class="overflow-x-auto mb-4 sm:mb-6">
+                        <table class="w-full text-left text-[10px] sm:text-[11px] border-collapse border border-slate-300 min-w-[600px]">
+                            <thead id="reportMatrixHeader" class="bg-slate-100 text-slate-800">
+                                <!-- Dynamically generated headers with Alarm Group columns -->
+                            </thead>
+                            <tbody id="reportMatrixBody" class="divide-y divide-slate-200">
+                                <!-- Dynamically generated rows per timestamp -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Signatures Section -->
+                    <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-300 grid grid-cols-2 gap-4 sm:gap-8 text-center text-[11px] sm:text-xs">
+                        <div>
+                            <div class="border-b border-slate-400 w-32 sm:w-44 mx-auto mb-2 h-8 sm:h-10"></div>
+                            <p class="font-medium text-slate-700">ผู้จัดทำรายงาน (Engineer)</p>
+                        </div>
+                        <div>
+                            <div class="border-b border-slate-400 w-32 sm:w-44 mx-auto mb-2 h-8 sm:h-10"></div>
+                            <p class="font-medium text-slate-700">ผู้อนุมัติ (Supervisor)</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 text-xs">
-        <div id="toastIcon" class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-            <i class="fa-solid fa-check"></i>
-        </div>
-        <span id="toastMessage" class="font-medium">การดำเนินการสำเร็จ</span>
-    </div>
+    <!-- CSS rules specifically for printing in browser -->
+    <style>
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+            #printableReportSheet, #printableReportSheet * {
+                visibility: visible !important;
+            }
+            #printableReportSheet {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 15px !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
 
-    <!-- Main JavaScript Logic -->
+    <!-- JavaScript Application Logic -->
     <script>
-        let allProcessedEvents = [];
-        let googleSheetsWebAppUrl = localStorage.getItem('router_sheets_url') || "";
-        let frequencyChartInstance = null;
-        let severityChartInstance = null;
+        // Sample Raw Log Data (PROTO.txt content baseline)
+        const rawLogData = `
+SOFTC1 Event & Alarm Log File
+2026/11/09 08:15:22 | ERR_102 | MOD_SPINDLE | Spindle motor temperature over limit (Warning)
+2026/11/09 08:30:10 | ERR_501 | MOD_SAFETY  | Area Safety Light Curtain Interrupted (Sensor Stop)
+2026/11/09 09:12:45 | ERR_900 | MOD_SYSTEM  | Emergency Stop Button Pressed on Control Panel
+2026/11/09 10:05:00 | ERR_204 | MOD_AXIS_Z  | Hardware Limit Switch Reached on Z-Axis (Positive Limit)
+2026/11/09 11:20:18 | ERR_303 | MOD_TOOL    | Tool Life Expired for Pocket #12 (BBD Measurement Required)
+2026/11/09 13:40:05 | ERR_501 | MOD_SAFETY  | Area Safety Light Curtain Interrupted (Sensor Stop)
+2026/11/09 14:15:30 | ERR_602 | MOD_ROUTINE | Sequence Routine Timeout on Cycle Start
+2026/11/09 15:00:12 | ERR_900 | MOD_SYSTEM  | Emergency Stop Button Pressed on Control Panel
+`;
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (googleSheetsWebAppUrl) {
-                const urlInput = document.getElementById('scriptUrlInput');
-                if (urlInput) urlInput.value = googleSheetsWebAppUrl;
-                updateSyncBadgeUI(true, "พร้อมซิงค์");
-                fetchMachinesFromGoogleSheet(true);
+        let currentMachine = 'CNC SoftC1 (TongTai)';
+        let parsedEvents = [];
+        let groupedAlarms = {};
+        let activeFilter = 'ALL';
+        let barChartInstance = null;
+        let pieChartInstance = null;
+        let totalDowntimeMinutes = 0;
+        let isAutoSyncEnabled = false;
+
+        // Switch Machine Selector
+        function switchMachine(machineName) {
+            currentMachine = machineName;
+            // Refresh title text
+            const titleEl = document.querySelector('header h1');
+            if (titleEl) titleEl.innerText = `${currentMachine} Alarm & Event Monitor`;
+            
+            // Re-process for selected machine context
+            processNewLogContent(rawLogData);
+        }
+
+        // Toggle Google Sheets Config Modal
+        function toggleGoogleSheetsModal() {
+            const modal = document.getElementById('googleSheetsModal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.firstElementChild.classList.remove('scale-95');
+                    modal.firstElementChild.classList.add('scale-100');
+                }, 10);
+            } else {
+                modal.firstElementChild.classList.remove('scale-100');
+                modal.firstElementChild.classList.add('scale-95');
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 200);
             }
-            initCharts();
-        });
+        }
 
-        function formatDowntimeDisplay(totalMin) {
-            if (!totalMin || totalMin <= 0) return "0 นาที";
-            if (totalMin >= 60) {
-                const hours = Math.floor(totalMin / 60);
-                const mins = Math.round(totalMin % 60);
-                return mins > 0 ? `${hours} ชม. ${mins} นาที` : `${hours} ชม.`;
+        function toggleAutoSync(enabled) {
+            isAutoSyncEnabled = enabled;
+            const badge = document.getElementById('liveSyncStatusBadge');
+            if (enabled) {
+                badge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+                badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse mr-1"></span> Live Syncing';
+            } else {
+                badge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700';
+                badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-500 mr-1"></span> Offline';
             }
-            return `${Math.round(totalMin * 10) / 10} นาที`;
         }
 
-        function toggleSettingsModal() {
-            const modal = document.getElementById('settingsModal');
-            if (modal) modal.classList.toggle('hidden');
+        // Post Real-time Data to Google Sheets Web App Endpoint
+        async function syncDataToGoogleSheets() {
+            const urlInput = document.getElementById('gasWebAppUrl');
+            const url = (urlInput.value || '').trim();
+            const msgEl = document.getElementById('syncLogMessage');
+
+            if (!url) {
+                msgEl.className = 'text-xs font-medium p-2.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30';
+                msgEl.innerText = 'กรุณาระบุ Google Apps Script Web App URL ก่อนทำการซิงค์';
+                msgEl.classList.remove('hidden');
+                return;
+            }
+
+            msgEl.className = 'text-xs font-medium p-2.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30';
+            msgEl.innerText = 'กำลังส่งข้อมูลเข้า Google Sheets...';
+            msgEl.classList.remove('hidden');
+
+            try {
+                // Post summary and events batch to GAS Web App
+                const payload = {
+                    machineId: currentMachine,
+                    syncTimestamp: new Date().toISOString(),
+                    totalEvents: parsedEvents.length,
+                    totalDowntimeMinutes: totalDowntimeMinutes,
+                    events: parsedEvents
+                };
+
+                await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors', // standard cross-origin mode for Google Apps Script Web Apps
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                msgEl.className = 'text-xs font-medium p-2.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                msgEl.innerText = 'ส่งข้อมูลเข้า Google Spreadsheet สำเร็จเรียบร้อย!';
+            } catch (err) {
+                msgEl.className = 'text-xs font-medium p-2.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30';
+                msgEl.innerText = 'เกิดข้อผิดพลาดในการซิงค์ข้อมูล: ' + err.message;
+            }
         }
 
-        function toggleAppsScriptModal() {
-            const modal = document.getElementById('appsScriptModal');
-            if (modal) modal.classList.toggle('hidden');
-        }
+        // Parse Log Data into Structured Objects
+        function parseLogText(text) {
+            const lines = text.split('\n');
+            const events = [];
 
-        function open8DReportModal() {
-            const events = getFilteredEvents();
-            const selectedMachine = document.getElementById('machineSelector').value;
-            
-            const repMachine = document.getElementById('repMachineName');
-            if (repMachine) repMachine.innerText = selectedMachine === "ALL" ? "ทุกเครื่องจักร (All Machines)" : selectedMachine;
-            
-            const totalDowntime = events.reduce((sum, ev) => sum + ev.downtimeMinutes, 0);
-            const repDT = document.getElementById('repTotalDowntime');
-            if (repDT) repDT.innerText = formatDowntimeDisplay(totalDowntime);
-            
-            const criticalCount = events.filter(ev => ev.severity === "CRITICAL").length;
-            const repCrit = document.getElementById('repCriticalCount');
-            if (repCrit) repCrit.innerText = `${criticalCount} ครั้ง`;
+            lines.forEach((line, index) => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('SOFTC1')) return;
 
-            const summaryMap = {};
-            events.forEach(ev => {
-                const key = ev.groupName;
-                if (!summaryMap[key]) {
-                    summaryMap[key] = {
-                        code: ev.code,
-                        groupName: ev.groupName,
-                        severity: ev.severity,
-                        count: 0,
-                        totalDowntime: 0
-                    };
+                const parts = trimmed.split('|').map(p => p.trim());
+                let timestamp = '2026/11/09 00:00:00';
+                let code = 'LOG_EVENT';
+                let module = 'SYSTEM';
+                let message = trimmed;
+
+                if (parts.length >= 4) {
+                    timestamp = parts[0];
+                    code = parts[1];
+                    module = parts[2];
+                    message = parts[3];
                 }
-                summaryMap[key].count += 1;
-                summaryMap[key].totalDowntime += ev.downtimeMinutes;
-                if (ev.severity === "CRITICAL") {
-                    summaryMap[key].severity = "CRITICAL";
+
+                // Match Category & Severity
+                let groupKey = 'OTHER_LOGS';
+                let groupName = 'บันทึกทั่วไป (System Logs)';
+                let severity = 'INFO';
+                let category = 'Routine & System';
+                let icon = 'fa-solid fa-circle-info';
+                let desc = 'บันทึกการทำงานและสถานะทั่วไปของระบบ';
+
+                const msgUpper = message.toUpperCase();
+
+                if (msgUpper.includes('EMERGENCY STOP') || msgUpper.includes('ERR_900')) {
+                    groupKey = 'MACHINE_STOP';
+                    groupName = 'เครื่องหยุดฉุกเฉิน (Emergency Stop)';
+                    severity = 'CRITICAL';
+                    category = 'Hardware & Safety';
+                    icon = 'fa-solid fa-hand';
+                    desc = 'กดปุ่มหยุดฉุกเฉินหรือระบบสั่งหยุดเครื่องกะทันหัน';
+                } else if (msgUpper.includes('LIMIT SWITCH') || msgUpper.includes('ERR_204')) {
+                    groupKey = 'HARDWARE_LIMIT';
+                    groupName = 'Hardware Limit Switch Error';
+                    severity = 'CRITICAL';
+                    category = 'Axis & Mechanical';
+                    icon = 'fa-solid fa-ban';
+                    desc = 'แกนเคลื่อนที่ชนสวิตช์จำกัดระยะทาง Safety Limit Switch';
+                } else if (msgUpper.includes('SAFETY') || msgUpper.includes('LIGHT CURTAIN') || msgUpper.includes('ERR_501')) {
+                    groupKey = 'SENSOR_SAFETY';
+                    groupName = 'Sensor / Safety Area Stop';
+                    severity = 'WARNING';
+                    category = 'Area Protection';
+                    icon = 'fa-solid fa-tower-cell';
+                    desc = 'เซนเซอร์ตรวจจับม่านแสงหรือประตูความปลอดภัยถูกขัดจังหวะ';
+                } else if (msgUpper.includes('SPINDLE') || msgUpper.includes('TOOL') || msgUpper.includes('ERR_102') || msgUpper.includes('ERR_303')) {
+                    groupKey = 'SPINDLE_TOOL_ERROR';
+                    groupName = 'Spindle & Tool Measurement Fault';
+                    severity = 'WARNING';
+                    category = 'Machining & Spindle';
+                    icon = 'fa-solid fa-gear';
+                    desc = 'อุณหภูมิสปินเดิลเกินกำหนด หรือเครื่องมือตัดหมดอายุการใช้งาน';
+                } else if (msgUpper.includes('SEQUENCE') || msgUpper.includes('ROUTINE') || msgUpper.includes('ERR_602')) {
+                    groupKey = 'SEQUENCE_FAULT';
+                    groupName = 'Sequence Routine Faulty';
+                    severity = 'INFO';
+                    category = 'Software Logic';
+                    icon = 'fa-solid fa-bug';
+                    desc = 'โปรแกรมขัดจังหวะหรือลำดับคำสั่ง Routine ขัดข้อง';
                 }
+
+                events.push({
+                    id: index + 1,
+                    timestamp,
+                    date: timestamp.split(' ')[0] || '-',
+                    time: timestamp.split(' ')[1] || '-',
+                    code,
+                    module,
+                    message,
+                    groupKey,
+                    groupName,
+                    severity,
+                    category,
+                    icon,
+                    desc,
+                    downtimeMinutes: 0
+                });
             });
 
-            const aggregatedAlarms = Object.values(summaryMap).sort((a, b) => b.totalDowntime - a.totalDowntime).slice(0, 8);
+            return events;
+        }
 
-            const tbody = document.getElementById('repTableBody');
-            if (tbody) {
-                if (aggregatedAlarms.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">ไม่มีข้อมูล Alarm สำหรับออกรายงาน</td></tr>`;
-                } else {
-                    let html = "";
-                    aggregatedAlarms.forEach((item, idx) => {
-                        const badgeColor = item.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-                        html += `
-                            <tr class="border-b border-slate-800/40 hover:bg-slate-800/20">
-                                <td class="p-2.5 font-mono text-slate-400">${idx + 1}</td>
-                                <td class="p-2.5 font-mono text-slate-300">${item.code}</td>
-                                <td class="p-2.5 font-medium text-white">${item.groupName}</td>
-                                <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeColor}">${item.severity}</span></td>
-                                <td class="p-2.5 text-center font-mono font-semibold text-cyan-400">${item.count} ครั้ง</td>
-                                <td class="p-2.5 text-right font-mono font-bold text-rose-400">${formatDowntimeDisplay(item.totalDowntime)}</td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = html;
-                }
+        // Format Minutes to DHMS
+        function formatMinutesToDHMS(totalMin) {
+            if (!totalMin || totalMin <= 0) return '0 นาที';
+            const hours = Math.floor(totalMin / 60);
+            const mins = Math.round(totalMin % 60);
+            if (hours > 0) {
+                return `${hours} ชม. ${mins} นาที`;
             }
-
-            const reportModal = document.getElementById('reportModal');
-            if (reportModal) reportModal.classList.remove('hidden');
+            return `${mins} นาที`;
         }
 
-        function close8DReportModal() {
-            const modal = document.getElementById('reportModal');
-            if (modal) modal.classList.add('hidden');
+        // Helper: Parse Date String into JS Date Object Safely
+        function parseTimestampToDate(dtStr) {
+            if (!dtStr) return new Date();
+            const numbers = dtStr.match(/\d+/g);
+            if (!numbers || numbers.length < 3) return new Date();
+            const year = parseInt(numbers[0], 10);
+            const month = parseInt(numbers[1], 10) - 1;
+            const day = parseInt(numbers[2], 10);
+            const hour = numbers[3] ? parseInt(numbers[3], 10) : 0;
+            const minute = numbers[4] ? parseInt(numbers[4], 10) : 0;
+            const second = numbers[5] ? parseInt(numbers[5], 10) : 0;
+            return new Date(year, month, day, hour, minute, second);
         }
 
-        function saveSheetSettings() {
-            const urlInput = document.getElementById('scriptUrlInput');
-            const urlValue = urlInput ? urlInput.value.trim() : "";
-            googleSheetsWebAppUrl = urlValue;
-            localStorage.setItem('router_sheets_url', urlValue);
-            toggleSettingsModal();
+        // Calculate Exact Downtime based on Real File Timestamps
+        function calculateDowntime(events) {
+            let grandTotalMin = 0;
+            if (!events || events.length === 0) return 0;
 
-            if (urlValue) {
-                updateSyncBadgeUI(true, "เชื่อมต่อแล้ว");
-                showToast("บันทึก URL สำเร็จ กำลังดึงรายชื่อเครื่อง...");
-                fetchMachinesFromGoogleSheet(false);
-            } else {
-                updateSyncBadgeUI(false, "ยังไม่เชื่อมต่อ Sheet");
-                showToast("ล้าง URL เรียบร้อย", false);
-            }
-        }
+            // Sort events chronologically to ensure accurate time difference calculation
+            events.sort((a, b) => parseTimestampToDate(a.timestamp) - parseTimestampToDate(b.timestamp));
 
-        function updateSyncBadgeUI(isConnected, text) {
-            const dot = document.getElementById('syncDot');
-            const txt = document.getElementById('syncText');
-            const kpiStatus = document.getElementById('kpiSheetStatus');
+            events.forEach((event, index) => {
+                let calculatedMinutes = 0;
+                const currentT = parseTimestampToDate(event.timestamp);
 
-            if (isConnected) {
-                if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-                if (txt) txt.innerText = text;
-                if (kpiStatus) kpiStatus.innerText = "เชื่อมต่อแล้ว (History Data Alarm)";
-            } else {
-                if (dot) dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
-                if (txt) txt.innerText = text;
-                if (kpiStatus) kpiStatus.innerText = "ยังไม่ตั้งค่า URL";
-            }
-        }
+                if (index < events.length - 1) {
+                    const nextT = parseTimestampToDate(events[index + 1].timestamp);
+                    const diffMs = nextT.getTime() - currentT.getTime();
 
-        function showToast(message, isSuccess = true) {
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toastMessage');
-            const toastIcon = document.getElementById('toastIcon');
-
-            if (!toast) return;
-
-            if (toastMessage) toastMessage.innerText = message;
-            if (toastIcon) {
-                toastIcon.className = isSuccess ? "w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center" : "w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center";
-                toastIcon.innerHTML = isSuccess ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
-            }
-
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3500);
-        }
-
-        function copyAppsScriptCode() {
-            const codeDisplay = document.getElementById('gasCodeDisplay');
-            if (!codeDisplay) return;
-            const codeText = codeDisplay.innerText;
-            const textarea = document.createElement('textarea');
-            textarea.value = codeText;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showToast("คัดลอกโค้ด Apps Script เรียบร้อยแล้ว!");
-            } catch (err) {
-                showToast("ไม่สามารถคัดลอกได้อัตโนมัติ", false);
-            }
-            document.body.removeChild(textarea);
-        }
-
-        function fetchMachinesFromGoogleSheet(silent = false) {
-            if (!googleSheetsWebAppUrl) return;
-            if (!silent) showToast("กำลังดึงรายชื่อเครื่องจากแท็บ M/C...");
-
-            const callbackName = 'onSheetMachines_' + Math.floor(Math.random() * 100000);
-            window[callbackName] = function(data) {
-                delete window[callbackName];
-                const elem = document.getElementById(callbackName);
-                if (elem) elem.remove();
-
-                if (data && data.result === "success" && Array.isArray(data.machines) && data.machines.length > 0) {
-                    const selector = document.getElementById('machineSelector');
-                    if (selector) {
-                        const currentVal = selector.value;
-                        selector.innerHTML = `<option value="ALL">ทุกเครื่องจักร (All Machines)</option>`;
-                        data.machines.forEach(m => {
-                            const opt = document.createElement('option');
-                            opt.value = m;
-                            opt.innerText = m;
-                            selector.appendChild(opt);
-                        });
-                        if (data.machines.includes(currentVal) || currentVal === "ALL") {
-                            selector.value = currentVal;
-                        } else {
-                            selector.value = data.machines[0];
-                        }
-                        renderDashboard();
+                    // Filter reasonable downtime gaps between consecutive alarms (up to 24 hours per incident)
+                    if (diffMs > 0 && diffMs <= 24 * 3600 * 1000) {
+                        calculatedMinutes = diffMs / (1000 * 60);
                     }
-                    if (!silent) showToast(`ดึงชื่อเครื่องจักรสำเร็จ ${data.machines.length} เครื่อง`);
                 }
-            };
 
-            const script = document.createElement('script');
-            script.id = callbackName;
-            const delim = googleSheetsWebAppUrl.includes('?') ? '&' : '?';
-            script.src = `${googleSheetsWebAppUrl}${delim}action=getMachines&callback=${callbackName}`;
-            script.onerror = function() {
-                delete window[callbackName];
-                script.remove();
-            };
-            document.body.appendChild(script);
+                // If last event in log, compute default baseline according to alarm severity
+                if (calculatedMinutes === 0) {
+                    if (event.severity === 'CRITICAL') calculatedMinutes = 15;
+                    else if (event.severity === 'WARNING') calculatedMinutes = 5;
+                    else calculatedMinutes = 1;
+                }
+
+                event.downtimeMinutes = calculatedMinutes;
+                grandTotalMin += calculatedMinutes;
+            });
+
+            return grandTotalMin;
         }
 
-        function handleFileSelected(event) {
+        // Cluster Events
+        function clusterEvents(events) {
+            const groups = {};
+            events.forEach(event => {
+                if (!groups[event.groupKey]) {
+                    groups[event.groupKey] = {
+                        key: event.groupKey,
+                        name: event.groupName,
+                        severity: event.severity,
+                        category: event.category,
+                        icon: event.icon,
+                        desc: event.desc,
+                        count: 0,
+                        totalDowntimeMin: 0,
+                        items: []
+                    };
+                }
+                groups[event.groupKey].count += 1;
+                groups[event.groupKey].totalDowntimeMin += (event.downtimeMinutes || 0);
+                groups[event.groupKey].items.push(event);
+            });
+            return groups;
+        }
+
+        // File Upload Handler
+        function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                parseLogContent(e.target.result);
-                event.target.value = '';
+                const text = e.target.result;
+                processNewLogContent(text);
             };
             reader.readAsText(file);
         }
 
-        function parseLogTimestamp(timeStr) {
-            try {
-                const parts = timeStr.split(' ');
-                const dateParts = parts[0].split('.');
-                const timeParts = parts[1].split(':');
-                return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
-            } catch (err) {
-                return null;
+        function processNewLogContent(text) {
+            parsedEvents = parseLogText(text);
+            totalDowntimeMinutes = calculateDowntime(parsedEvents);
+            groupedAlarms = clusterEvents(parsedEvents);
+
+            updateKPIs();
+            renderCharts();
+            renderGroupColumns();
+
+            if (isAutoSyncEnabled) {
+                syncDataToGoogleSheets();
             }
         }
 
-        function extractAlarmTitle(msg, code) {
-            if (msg.includes("Machine alarm") || msg.includes("Emergency")) return "Machine Emergency Stop";
-            if (msg.includes("Area sensor")) return "Area Sensor";
-            if (msg.includes("Broken drill data")) return "Broken Drill Data";
-            if (msg.includes("LENK ERROR")) return "LENK Error";
-            if (msg.includes("Program interrupted")) return "Program Interrupted";
-            if (msg.includes("Aborting with <ESC>")) return "Program Aborted (ESC)";
-            if (msg.includes("NOT IN SPINDLE")) return "Tool Not In Spindle";
-            if (msg.includes("Dead lock")) return "Dead lock; GDPtr";
-            if (msg.includes("Internal data error")) return "Internal Data Error";
-            if (msg.includes("DIAMETER ERROR")) return "Diameter Error";
-            
-            let clean = msg.split(':')[0].trim();
-            if (clean.length > 30) clean = clean.substring(0, 30) + "...";
-            return clean || ("Alarm Code " + code);
-        }
+        // Update Dashboard KPIs
+        function updateKPIs() {
+            document.getElementById('kpiTotalEvents').innerText = parsedEvents.length.toLocaleString();
+            document.getElementById('kpiTotalGroups').innerText = Object.keys(groupedAlarms).length.toLocaleString();
+            document.getElementById('kpiTotalDowntime').innerText = formatMinutesToDHMS(totalDowntimeMinutes);
 
-        function parseLogContent(content) {
-            const lines = content.split('\n');
-            const rawList = [];
-            const regex = /^(\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}:\d{2})\s+(\d+)\s+(\d+)\s+([^\s:]+)\s*:\s*(.*)$/;
+            let criticalCount = 0;
+            let warningCount = 0;
 
-            const selector = document.getElementById('machineSelector');
-            const selectedMachine = selector ? selector.value : "Tongtai No.10";
-            const targetMachine = selectedMachine !== "ALL" ? selectedMachine : "Tongtai No.10";
-
-            lines.forEach(line => {
-                const t = line.trim();
-                if (!t) return;
-                const match = t.match(regex);
-                if (match) {
-                    const timeStr = match[1];
-                    const code = match[2];
-                    const msg = match[5];
-                    const dateObj = parseLogTimestamp(timeStr);
-
-                    let severity = "INFO";
-                    if (msg.includes("Machine alarm") || msg.includes("Emergency") || msg.includes("Dead lock") || msg.includes("Broken drill data") || msg.includes("LENK ERROR") || msg.includes("Internal data error") || msg.includes("DIAMETER ERROR")) {
-                        severity = "CRITICAL";
-                    } else if (msg.includes("Area sensor") || msg.includes("Aborting with <ESC>") || msg.includes("Program interrupted") || msg.includes("NOT IN SPINDLE") || msg.includes("NOT ALL TOOL OUT")) {
-                        severity = "WARNING";
-                    }
-
-                    rawList.push({
-                        machine: targetMachine,
-                        timestamp: timeStr,
-                        dateObj: dateObj,
-                        code: code,
-                        groupName: extractAlarmTitle(msg, code),
-                        severity: severity,
-                        message: msg
-                    });
-                }
+            Object.values(groupedAlarms).forEach(g => {
+                if (g.severity === 'CRITICAL') criticalCount += g.count;
+                else if (g.severity === 'WARNING') warningCount += g.count;
             });
 
-            if (rawList.length === 0) {
-                showToast("ไม่พบรูปแบบ Log ที่รองรับในไฟล์นี้", false);
+            document.getElementById('kpiCriticalAlarms').innerText = criticalCount.toLocaleString();
+            document.getElementById('kpiWarningAlarms').innerText = warningCount.toLocaleString();
+
+            document.getElementById('countFilterAll').innerText = Object.keys(groupedAlarms).length;
+            document.getElementById('countFilterCritical').innerText = Object.values(groupedAlarms).filter(g => g.severity === 'CRITICAL').length;
+            document.getElementById('countFilterWarning').innerText = Object.values(groupedAlarms).filter(g => g.severity === 'WARNING').length;
+            document.getElementById('countFilterInfo').innerText = Object.values(groupedAlarms).filter(g => g.severity === 'INFO').length;
+        }
+
+        // Render Kanban Columns
+        function renderGroupColumns() {
+            const container = document.getElementById('alarmGroupContainer');
+            container.innerHTML = '';
+
+            const searchQuery = (document.getElementById('searchInput').value || '').toLowerCase();
+            const groupList = Object.values(groupedAlarms);
+
+            const filteredGroups = groupList.filter(g => {
+                if (activeFilter !== 'ALL' && g.severity !== activeFilter) return false;
+                if (searchQuery) {
+                    const matchName = g.name.toLowerCase().includes(searchQuery);
+                    const matchDesc = g.desc.toLowerCase().includes(searchQuery);
+                    const matchMsg = g.items.some(i => i.message.toLowerCase().includes(searchQuery));
+                    return matchName || matchDesc || matchMsg;
+                }
+                return true;
+            });
+
+            if (filteredGroups.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-500">
+                        <i class="fa-solid fa-inbox text-4xl mb-3 text-slate-600 block"></i>
+                        <p class="text-sm">ไม่พบกลุ่มรายการ Alarm ที่ตรงกับเงื่อนไขการค้นหา</p>
+                    </div>
+                `;
                 return;
             }
 
-            const processed = [];
-            for (let i = 0; i < rawList.length; i++) {
-                const curr = rawList[i];
-                let dt = 0;
-                if (curr.severity === "CRITICAL" || curr.severity === "WARNING") {
-                    if (i < rawList.length - 1 && curr.dateObj && rawList[i + 1].dateObj) {
-                        const diff = rawList[i + 1].dateObj - curr.dateObj;
-                        dt = Math.max(0.5, Math.round((diff / (1000 * 60)) * 10) / 10);
-                    } else {
-                        dt = 1.0;
-                    }
+            filteredGroups.forEach(group => {
+                let badgeBg = 'bg-slate-800 text-slate-300 border-slate-700';
+                let iconColor = 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20';
+                let borderColor = 'hover:border-indigo-500/50';
+
+                if (group.severity === 'CRITICAL') {
+                    badgeBg = 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+                    iconColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+                    borderColor = 'hover:border-rose-500/50';
+                } else if (group.severity === 'WARNING') {
+                    badgeBg = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+                    iconColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+                    borderColor = 'hover:border-amber-500/50';
+                } else if (group.severity === 'INFO') {
+                    badgeBg = 'bg-sky-500/10 text-sky-400 border-sky-500/30';
+                    iconColor = 'text-sky-400 bg-sky-500/10 border-sky-500/20';
+                    borderColor = 'hover:border-sky-500/50';
                 }
 
-                processed.push({
-                    machine: curr.machine,
-                    timestamp: curr.timestamp,
-                    code: curr.code,
-                    groupName: curr.groupName,
-                    severity: curr.severity,
-                    downtimeMinutes: dt,
-                    message: curr.message
-                });
-            }
+                const recentItems = group.items.slice(-2).reverse();
 
-            allProcessedEvents = allProcessedEvents.filter(ev => ev.machine !== targetMachine);
-            allProcessedEvents = allProcessedEvents.concat(processed);
-
-            renderDashboard();
-            showToast(`โหลดและประมวลผลไฟล์ของ ${targetMachine} สำเร็จ (${processed.length} รายการ)`);
-        }
-
-        function onMachineSelectionChanged() {
-            renderDashboard();
-        }
-
-        function getFilteredEvents() {
-            const selector = document.getElementById('machineSelector');
-            const selectedMachine = selector ? selector.value : "ALL";
-            let events = allProcessedEvents.filter(ev => ev.severity === "CRITICAL" || ev.severity === "WARNING");
-            
-            if (selectedMachine !== "ALL") {
-                events = events.filter(ev => ev.machine === selectedMachine);
-            }
-            return events;
-        }
-
-        function renderDashboard() {
-            const events = getFilteredEvents();
-            const selector = document.getElementById('machineSelector');
-            const selectedMachine = selector ? selector.value : "ALL";
-
-            const kpiMach = document.getElementById('kpiSelectedMachine');
-            if (kpiMach) kpiMach.innerText = selectedMachine === "ALL" ? "ทุกเครื่องจักร" : selectedMachine;
-            
-            const kpiMachSub = document.getElementById('kpiMachineSub');
-            if (kpiMachSub) kpiMachSub.innerText = selectedMachine === "ALL" ? `รวมสะสมทุกเครื่อง (${allProcessedEvents.length} รายการ)` : `เฉพาะเครื่อง ${selectedMachine}`;
-
-            const totalDowntime = events.reduce((sum, ev) => sum + ev.downtimeMinutes, 0);
-            const kpiDT = document.getElementById('kpiTotalDowntime');
-            if (kpiDT) kpiDT.innerText = formatDowntimeDisplay(totalDowntime);
-
-            const totalAlarms = events.length;
-            const criticalCount = events.filter(ev => ev.severity === "CRITICAL").length;
-            
-            const kpiAlarms = document.getElementById('kpiTotalAlarms');
-            if (kpiAlarms) kpiAlarms.innerText = `${totalAlarms} รายการ`;
-            
-            const kpiCritSub = document.getElementById('kpiCriticalSub');
-            if (kpiCritSub) kpiCritSub.innerText = `Critical: ${criticalCount} ครั้ง`;
-
-            renderTable(events);
-            renderChartsData(events);
-        }
-
-        function renderTable(events) {
-            const tbody = document.getElementById('alarmEventsTableBody');
-            if (!tbody) return;
-
-            if (events.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="py-8 text-center text-slate-500">
-                            <div class="flex flex-col items-center justify-center space-y-2">
-                                <i class="fa-solid fa-circle-check text-2xl text-emerald-500"></i>
-                                <p>ไม่พบรายการ Alarm หรือ Error สำหรับเครื่องจักรนี้ (สามารถเลือกเครื่องอื่นหรืออัปโหลดเพิ่มได้)</p>
+                const cardHtml = `
+                    <div class="glass-card rounded-2xl p-5 flex flex-col justify-between transition duration-200 border border-slate-800 ${borderColor} group">
+                        <div>
+                            <div class="flex items-start justify-between gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${iconColor}">
+                                    <i class="${group.icon} text-lg"></i>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${badgeBg}">
+                                    ${group.severity}
+                                </span>
                             </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
 
-            let html = "";
-            events.forEach((ev, idx) => {
-                const badgeColor = ev.severity === "CRITICAL" ? "bg-rose-500/20 text-rose-400 border-rose-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30";
-                html += `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="py-3 px-4 font-mono text-slate-400">${idx + 1}</td>
-                        <td class="py-3 px-4 font-semibold text-cyan-300">${ev.machine}</td>
-                        <td class="py-3 px-4 font-mono text-slate-300">${ev.timestamp}</td>
-                        <td class="py-3 px-4 font-mono text-slate-400">${ev.code}</td>
-                        <td class="py-3 px-4 font-medium text-white">${ev.groupName}</td>
-                        <td class="py-3 px-4">
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${ev.severity}</span>
-                        </td>
-                        <td class="py-3 px-4 text-right font-mono font-bold text-rose-400">${formatDowntimeDisplay(ev.downtimeMinutes)}</td>
-                        <td class="py-3 px-4 text-slate-400 truncate max-w-[250px]" title="${ev.message}">${ev.message}</td>
-                    </tr>
+                            <h3 class="text-sm font-bold text-white group-hover:text-indigo-300 transition line-clamp-1">${group.name}</h3>
+                            <p class="text-xs text-slate-400 mt-1 line-clamp-2">${group.desc}</p>
+
+                            <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-2 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-400">จำนวนที่เกิด:</span>
+                                    <span class="text-white font-extrabold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${group.count} ครั้ง</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-rose-400 font-medium"><i class="fa-solid fa-clock text-[10px] mr-1"></i>เวลาสูญเสีย:</span>
+                                    <span class="text-rose-400 font-extrabold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">${formatMinutesToDHMS(group.totalDowntimeMin)}</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 space-y-1.5">
+                                <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">รายการล่าสุด:</p>
+                                ${recentItems.map(item => `
+                                    <div class="bg-slate-900/90 rounded-lg p-2 text-[11px] font-mono text-slate-300 border border-slate-800/80 truncate">
+                                        <span class="text-slate-400">${item.time}</span> : ${item.message}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="mt-5 pt-3">
+                            <button onclick="openGroupModal('${group.key}')" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white text-xs font-semibold transition border border-slate-700 hover:border-indigo-500 flex items-center justify-center space-x-2 shadow-sm">
+                                <span>ดูรายละเอียดกลุ่มนี้</span>
+                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
                 `;
+
+                container.insertAdjacentHTML('beforeend', cardHtml);
             });
-            tbody.innerHTML = html;
         }
 
-        function initCharts() {
-            const ctxFreqElem = document.getElementById('frequencyChart');
-            if (ctxFreqElem) {
-                const ctxFreq = ctxFreqElem.getContext('2d');
-                frequencyChartInstance = new Chart(ctxFreq, {
-                    type: 'bar',
-                    data: { labels: [], datasets: [{ label: 'จำนวนครั้ง', data: [], backgroundColor: [], borderRadius: 8 }] },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { size: 10 }, precision: 0 } }
+        // Render Charts
+        function renderCharts() {
+            const labels = [];
+            const multiLineLabels = [];
+            const dataCounts = [];
+            const backgroundColors = [];
+
+            const isMobileScreen = window.innerWidth < 640;
+
+            Object.values(groupedAlarms).forEach(group => {
+                labels.push(group.name);
+
+                // Short, compact labels specifically for the X-axis to completely eliminate overlapping text
+                let lines = group.name;
+                if (group.key === 'HARDWARE_LIMIT') {
+                    lines = isMobileScreen ? ['Limit Sw.'] : ['Hardware Limit', 'Switch Error'];
+                } else if (group.key === 'SPINDLE_TOOL_ERROR') {
+                    lines = isMobileScreen ? ['Spindle'] : ['Spindle & Tool', 'Faulty'];
+                } else if (group.key === 'SENSOR_SAFETY') {
+                    lines = isMobileScreen ? ['Safety'] : ['Sensor Stop /', 'Safety Area'];
+                } else if (group.key === 'SEQUENCE_FAULT') {
+                    lines = isMobileScreen ? ['Seq.Fault'] : ['Sequence Routine', 'Faulty'];
+                } else if (group.key === 'MACHINE_STOP') {
+                    lines = isMobileScreen ? ['E-Stop'] : ['Emergency Stop', '(Machine Stop)'];
+                } else if (group.key === 'OTHER_LOGS') {
+                    lines = isMobileScreen ? ['Logs'] : ['บันทึกทั่วไป', '(Logs)'];
+                }
+
+                multiLineLabels.push(lines);
+                dataCounts.push(group.count);
+
+                if (group.severity === 'CRITICAL') backgroundColors.push('rgba(244, 63, 94, 0.85)');
+                else if (group.severity === 'WARNING') backgroundColors.push('rgba(245, 158, 11, 0.85)');
+                else backgroundColors.push('rgba(56, 189, 248, 0.85)');
+            });
+
+            const ctxBar = document.getElementById('alarmBarChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: multiLineLabels,
+                    datasets: [{
+                        label: 'จำนวนการเกิด Alarm (ครั้ง)',
+                        data: dataCounts,
+                        backgroundColor: backgroundColors,
+                        borderRadius: 6,
+                        borderWidth: 0,
+                        barPercentage: isMobileScreen ? 0.7 : 0.55,
+                        categoryPercentage: 0.85
+                    }]
+                },
+                options: {
+                    indexAxis: 'x', // Vertical bar chart
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 5,
+                            right: 5,
+                            top: 10,
+                            bottom: isMobileScreen ? 15 : 10
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 12,
+                            boxPadding: 6,
+                            usePointStyle: true,
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return labels[index] || '';
+                                },
+                                label: function(context) {
+                                    return ` เกิดขึ้นทั้งหมด: ${context.parsed.y.toLocaleString()} ครั้ง`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { 
+                                color: '#e2e8f0', 
+                                font: { family: 'Kanit', size: isMobileScreen ? 10 : 11, weight: '600' },
+                                autoSkip: false, // Strictly display ALL labels without dropping any
+                                maxRotation: isMobileScreen ? 35 : 0,  // Angle text on mobile to avoid touching adjacent words
+                                minRotation: isMobileScreen ? 35 : 0,
+                                padding: 6
+                            },
+                            grid: { color: 'transparent' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#cbd5e1', 
+                                font: { family: 'Kanit', size: 11, weight: '500' },
+                                beginAtZero: true
+                            },
+                            grid: { color: 'rgba(51, 65, 85, 0.4)' }
                         }
                     }
-                });
-            }
+                }
+            });
 
-            const ctxSevElem = document.getElementById('severityChart');
-            if (ctxSevElem) {
-                const ctxSev = ctxSevElem.getContext('2d');
-                severityChartInstance = new Chart(ctxSev, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Critical (หยุดวิกฤต)', 'Warning (เตือน)'],
-                        datasets: [{ data: [0, 0], backgroundColor: ['#f43f5e', '#f59e0b'], borderWidth: 0 }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 11 } } } },
-                        cutout: '70%'
+            // Doughnut Chart Calculation
+            let critCount = 0, warnCount = 0, infoCount = 0;
+            Object.values(groupedAlarms).forEach(group => {
+                if (group.severity === 'CRITICAL') critCount += group.count;
+                else if (group.severity === 'WARNING') warnCount += group.count;
+                else infoCount += group.count;
+            });
+
+            const ctxPie = document.getElementById('severityPieChart').getContext('2d');
+            if (pieChartInstance) pieChartInstance.destroy();
+
+            pieChartInstance = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Critical (วิกฤต)', 'Warning (คำเตือน)', 'Info (ข้อมูล)'],
+                    datasets: [{
+                        data: [critCount, warnCount, infoCount],
+                        backgroundColor: [
+                            'rgba(244, 63, 94, 0.85)',
+                            'rgba(245, 158, 11, 0.85)',
+                            'rgba(56, 189, 248, 0.85)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#cbd5e1',
+                                font: { family: 'Kanit', size: 11 }
+                            }
+                        }
                     }
-                });
-            }
-        }
-
-        function renderChartsData(events) {
-            const alarmMap = {};
-            events.forEach(ev => {
-                if (!alarmMap[ev.groupName]) {
-                    alarmMap[ev.groupName] = { count: 0, severity: ev.severity };
-                }
-                alarmMap[ev.groupName].count += 1;
-                if (ev.severity === "CRITICAL") {
-                    alarmMap[ev.groupName].severity = "CRITICAL";
                 }
             });
-
-            const sortedAlarms = Object.entries(alarmMap).sort((a, b) => b[1].count - a[1].count).slice(0, 7);
-            const labels = sortedAlarms.map(item => item[0]);
-            const counts = sortedAlarms.map(item => item[1].count);
-            const backgroundColors = sortedAlarms.map(item => item[1].severity === "CRITICAL" ? "#f43f5e" : "#f59e0b");
-
-            if (frequencyChartInstance) {
-                frequencyChartInstance.data.labels = labels;
-                frequencyChartInstance.data.datasets[0].data = counts;
-                frequencyChartInstance.data.datasets[0].backgroundColor = backgroundColors;
-                frequencyChartInstance.update();
-            }
-
-            const criticalCount = events.filter(ev => ev.severity === "CRITICAL").length;
-            const warningCount = events.filter(ev => ev.severity === "WARNING").length;
-
-            if (severityChartInstance) {
-                severityChartInstance.data.datasets[0].data = [criticalCount, warningCount];
-                severityChartInstance.update();
-            }
         }
 
-        function syncDataToGoogleSheets() {
-            if (!googleSheetsWebAppUrl) {
-                showToast("กรุณาตั้งค่า Google Sheets Web App URL ก่อนซิงค์", false);
-                toggleSettingsModal();
-                return;
-            }
+        // Modal Handlers
+        function openGroupModal(groupKey) {
+            const group = groupedAlarms[groupKey];
+            if (!group) return;
 
-            const events = allProcessedEvents.filter(ev => ev.severity === "CRITICAL" || ev.severity === "WARNING");
-            if (events.length === 0) {
-                showToast("ไม่มีข้อมูล Alarm สะสมสำหรับซิงค์", false);
-                return;
-            }
+            document.getElementById('modalTitle').innerText = group.name;
+            document.getElementById('modalSubtitle').innerText = `${group.desc} (เวลาสูญเสียรวม: ${formatMinutesToDHMS(group.totalDowntimeMin)})`;
+            document.getElementById('modalCount').innerText = group.count;
+            document.getElementById('modalIcon').className = group.icon;
 
-            showToast("กำลังส่งข้อมูลสะสมทุกเครื่องซิงค์ลง Google Sheets...");
+            const listContainer = document.getElementById('modalLogList');
+            listContainer.innerHTML = '';
 
-            const payload = {
-                selectedMachine: "ALL",
-                events: events
-            };
-
-            fetch(googleSheetsWebAppUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(() => {
-                showToast("ซิงค์ข้อมูลทุกเครื่องลง History Data Alarm สำเร็จ!");
-            }).catch(err => {
-                showToast("เกิดข้อผิดพลาดในการซิงค์ข้อมูล", false);
+            group.items.forEach(item => {
+                const itemHtml = `
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-mono text-indigo-400 font-semibold">${item.timestamp}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 font-mono">${item.code}</span>
+                        </div>
+                        <div class="text-slate-300 flex-1 truncate sm:px-3">${item.message}</div>
+                        <div class="text-rose-400 text-[11px] font-semibold shrink-0">
+                            <i class="fa-solid fa-clock mr-1"></i>Downtime: ${formatMinutesToDHMS(item.downtimeMinutes)}
+                        </div>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', itemHtml);
             });
+
+            const modal = document.getElementById('detailModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild.classList.remove('scale-95');
+                modal.firstElementChild.classList.add('scale-100');
+            }, 10);
         }
 
-        function exportToCSV() {
-            const events = getFilteredEvents();
-            if (events.length === 0) {
-                showToast("ไม่มีข้อมูลสำหรับ Export", false);
-                return;
-            }
+        function closeModal() {
+            const modal = document.getElementById('detailModal');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
 
-            const csvEscape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-            // จัดกลุ่มข้อมูลแยกตามเครื่องจักร
-            const groupedByMachine = {};
-            events.forEach(ev => {
-                const machine = ev.machine || "Unknown Machine";
-                if (!groupedByMachine[machine]) groupedByMachine[machine] = [];
-                groupedByMachine[machine].push(ev);
-            });
-
-            // เรียงชื่อเครื่องจักรแบบตัวเลข (เช่น Tongtai No.10 ก่อน No.11)
-            const sortedMachines = Object.keys(groupedByMachine).sort((a, b) => 
-                a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' })
-            );
-
-            const csvRows = [];
-            const headers = ['#', 'ชื่อเครื่องจักร', 'เวลา (TIMESTAMP)', 'CODE', 'ชื่อรายการ ALARM', 'SEVERITY', 'เวลารวมสูญเสีย', 'MESSAGE'];
-
-            sortedMachines.forEach((machine, mIndex) => {
-                // เพิ่มแถวหัวตารางกำกับให้แต่ละเครื่องจักร
-                csvRows.push(headers);
-
-                // เรียงรายการ Alarm ภายในเครื่องตาม Code และชื่อรายการ
-                const machineEvents = groupedByMachine[machine].sort((a, b) => 
-                    String(a.code).localeCompare(String(b.code), 'en', { numeric: true }) ||
-                    String(a.groupName).localeCompare(String(b.groupName), 'th')
-                );
-
-                machineEvents.forEach((ev, i) => {
-                    csvRows.push([
-                        i + 1,
-                        ev.machine,
-                        ev.timestamp,
-                        ev.code,
-                        ev.groupName,
-                        ev.severity,
-                        formatDowntimeDisplay(ev.downtimeMinutes),
-                        ev.message
-                    ]);
-                });
-
-                // เว้นบรรทัดว่างคั่นระหว่างเครื่องจักร
-                if (mIndex < sortedMachines.length - 1) {
-                    csvRows.push(['', '', '', '', '', '', '', '']);
+        function setFilter(filterType) {
+            activeFilter = filterType;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter === filterType) {
+                    btn.className = 'filter-btn active-filter px-3 py-1.5 rounded-xl text-xs font-medium transition border border-indigo-500/50 bg-indigo-600/30 text-indigo-200 hover:bg-indigo-600/50 active:scale-95';
+                } else {
+                    btn.className = 'filter-btn px-3 py-1.5 rounded-xl text-xs font-medium transition border border-slate-700 bg-slate-800/80 text-slate-400 hover:text-white hover:border-slate-600 active:scale-95';
                 }
             });
-
-            const csvContent = '\uFEFF' + csvRows.map(row => row.map(csvEscape).join(',')).join('\r\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `ROUTER_Downtime_Report_${new Date().toISOString().slice(0,10)}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            showToast("Export CSV เรียงแยกบล็อกเครื่องสำเร็จ");
+            renderGroupColumns();
         }
 
-        function clearAllData() {
-            if (confirm("คุณต้องการล้างข้อมูลสะสมทั้งหมดทุกเครื่องใช่หรือไม่?")) {
-                allProcessedEvents = [];
-                renderDashboard();
-                showToast("ล้างข้อมูลเรียบร้อยแล้ว");
+        function toggleGasScriptVisibility() {
+            const block = document.getElementById('gasScriptContentBlock');
+            const icon = document.getElementById('gasScriptToggleIcon');
+            const label = document.getElementById('gasScriptToggleLabel');
+            
+            if (block.classList.contains('hidden')) {
+                block.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+                label.innerText = 'ซ่อนโค้ด Google Apps Script (Code.gs)';
+            } else {
+                block.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+                label.innerText = 'ดูโค้ด Google Apps Script (Code.gs)';
             }
         }
+
+        function copyGasScriptCode() {
+            const codeText = document.getElementById('gasSourceCodeBlock').innerText;
+            const btnText = document.getElementById('copyCodeBtnText');
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = codeText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            btnText.innerText = 'คัดลอกเรียบร้อย!';
+            setTimeout(() => {
+                btnText.innerText = 'คัดลอกโค้ดไปใช้งาน';
+            }, 2000);
+        }
+
+        // Export Multi-sheet Excel Report
+        function exportExcelReport() {
+            if (!parsedEvents || parsedEvents.length === 0) return;
+
+            const wb = XLSX.utils.book_new();
+
+            // 1. Executive Summary Sheet
+            const summaryData = [
+                ["CNC ALARM & DOWNTIME EXECUTIVE SUMMARY REPORT"],
+                ["Machine ID:", currentMachine],
+                ["Export Date:", new Date().toLocaleString('th-TH')],
+                [],
+                ["Metric", "Value"],
+                ["Total Recorded Events (รายการ)", parsedEvents.length],
+                ["Total Groups (จำนวนกลุ่ม Alarm)", Object.keys(groupedAlarms).length],
+                ["Total Downtime Minutes (นาที)", totalDowntimeMinutes],
+                ["Total Downtime (อ่านง่าย)", formatMinutesToDHMS(totalDowntimeMinutes)]
+            ];
+            const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, wsSummary, "Executive Summary");
+
+            // 2. Alarm Downtime Group Sheet
+            const groupData = [
+                ["Group Key", "Group Name", "Severity", "Category", "Event Count", "Total Downtime (Min)", "Total Downtime (Format)"]
+            ];
+            Object.values(groupedAlarms).forEach(g => {
+                groupData.push([
+                    g.key, g.name, g.severity, g.category, g.count,
+                    Math.round(g.totalDowntimeMin * 10) / 10,
+                    formatMinutesToDHMS(g.totalDowntimeMin)
+                ]);
+            });
+            const wsGroup = XLSX.utils.aoa_to_sheet(groupData);
+            XLSX.utils.book_append_sheet(wb, wsGroup, "Downtime Summary");
+
+            // 3. Raw Event Logs Sheet
+            const rawData = [
+                ["ID", "Date", "Time", "Timestamp", "Machine ID", "Code", "Module", "Group Name", "Severity", "Downtime (Min)", "Message"]
+            ];
+            parsedEvents.forEach(e => {
+                rawData.push([
+                    e.id, e.date, e.time, e.timestamp, currentMachine, e.code, e.module,
+                    e.groupName, e.severity, Math.round(e.downtimeMinutes * 10) / 10, e.message
+                ]);
+            });
+            const wsRaw = XLSX.utils.aoa_to_sheet(rawData);
+            XLSX.utils.book_append_sheet(wb, wsRaw, "Detailed Event Log");
+
+            XLSX.writeFile(wb, `CNC_Downtime_Report_${currentMachine.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
+        }
+
+        // PDF Print Preview Handlers
+        function exportKPIReport() {
+            document.getElementById('reportPrintDate').innerText = new Date().toLocaleString('th-TH');
+
+            document.getElementById('repTotalEvents').innerText = parsedEvents.length.toLocaleString();
+            document.getElementById('repTotalDowntime').innerText = formatMinutesToDHMS(totalDowntimeMinutes);
+            document.getElementById('repTotalGroups').innerText = Object.keys(groupedAlarms).length.toLocaleString();
+
+            let crit = 0, warn = 0;
+            Object.values(groupedAlarms).forEach(g => {
+                if (g.severity === 'CRITICAL') crit += g.count;
+                if (g.severity === 'WARNING') warn += g.count;
+            });
+            document.getElementById('repCritical').innerText = crit.toLocaleString();
+            document.getElementById('repWarning').innerText = warn.toLocaleString();
+
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = '';
+            Object.values(groupedAlarms).forEach((g, idx) => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b border-slate-200">
+                        <td class="p-1.5 sm:p-2">${idx + 1}</td>
+                        <td class="p-1.5 sm:p-2 font-bold">${g.name}</td>
+                        <td class="p-1.5 sm:p-2">${g.severity}</td>
+                        <td class="p-1.5 sm:p-2">${g.category}</td>
+                        <td class="p-1.5 sm:p-2 text-right">${g.count} ครั้ง</td>
+                        <td class="p-1.5 sm:p-2 text-right font-bold text-rose-700">${formatMinutesToDHMS(g.totalDowntimeMin)}</td>
+                    </tr>
+                `);
+            });
+
+            const modal = document.getElementById('reportModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function closeReportModal() {
+            const modal = document.getElementById('reportModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function triggerPrintProcess() {
+            window.print();
+        }
+
+        function reloadLogs() {
+            processNewLogContent(rawLogData);
+        }
+
+        // Initialize App on DOM Loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            reloadLogs();
+        });
     </script>
 </body>
 </html>
