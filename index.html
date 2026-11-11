@@ -60,7 +60,6 @@
                 height: auto !important;
                 display: block !important;
             }
-            /* Make inputs, textareas, and labels 100% crystal clear and prevent overlap */
             #reportModal textarea, #reportModal input {
                 background: #ffffff !important;
                 color: #0f172a !important;
@@ -570,7 +569,6 @@ function doGet(e) {
           var message = row[6] ? row[6].toString().trim() : "";
 
           if (machine && machine !== "ชื่อเครื่องจักร" && code) {
-            // แปลงเวลารวมสูญเสียจากข้อความกลับเป็นตัวเลขนาที
             var dtMin = 0;
             var hours = downtimeStr.match(/([\d.]+)\s*ชม\./);
             var mins = downtimeStr.match(/([\d.]+)\s*นาที/);
@@ -791,7 +789,6 @@ function formatMinutesToHoursOrMinutes(totalMin) {
                 const urlInput = document.getElementById('scriptUrlInput');
                 if (urlInput) urlInput.value = googleSheetsWebAppUrl;
                 updateSyncBadgeUI(true, "เชื่อมต่อเรียลไทม์");
-                // โหลดรายชื่อเครื่องจักรและดึงข้อมูลจาก Sheet อัตโนมัติทันทีที่เปิดเว็บ
                 fetchMachinesFromGoogleSheet(true);
                 fetchDataFromGoogleSheet(true);
                 startAutoSync();
@@ -802,7 +799,6 @@ function formatMinutesToHoursOrMinutes(totalMin) {
 
         function startAutoSync() {
             if (autoSyncTimer) clearInterval(autoSyncTimer);
-            // ดึงข้อมูลใหม่จาก Google Sheet อัตโนมัติทุกๆ 30 วินาที
             autoSyncTimer = setInterval(() => {
                 if (googleSheetsWebAppUrl) {
                     fetchDataFromGoogleSheet(true);
@@ -965,7 +961,6 @@ function formatMinutesToHoursOrMinutes(totalMin) {
             document.body.removeChild(textarea);
         }
 
-        // ดึงข้อมูล Alarm จากแท็บ History Data Alarm เข้ามาใน Web App อัตโนมัติ
         function fetchDataFromGoogleSheet(silent = false) {
             if (!googleSheetsWebAppUrl) return;
 
@@ -1155,6 +1150,11 @@ function formatMinutesToHoursOrMinutes(totalMin) {
 
             renderDashboard();
             showToast(`โหลดและประมวลผลไฟล์ของ ${targetMachine} สำเร็จ (${processed.length} รายการ)`);
+
+            // อัปโหลดไฟล์เสร็จแล้ว ซิงค์ลง Google Sheet ทันทีอัตโนมัติ
+            if (googleSheetsWebAppUrl) {
+                syncDataToGoogleSheets(true);
+            }
         }
 
         function onMachineSelectionChanged() {
@@ -1310,20 +1310,26 @@ function formatMinutesToHoursOrMinutes(totalMin) {
             }
         }
 
-        function syncDataToGoogleSheets() {
+        function syncDataToGoogleSheets(isAutomatic = false) {
             if (!googleSheetsWebAppUrl) {
-                showToast("กรุณาตั้งค่า Google Sheets Web App URL ก่อนซิงค์", false);
-                toggleSettingsModal();
+                if (!isAutomatic) {
+                    showToast("กรุณาตั้งค่า Google Sheets Web App URL ก่อนซิงค์", false);
+                    toggleSettingsModal();
+                }
                 return;
             }
 
             const events = allProcessedEvents.filter(ev => ev.severity === "CRITICAL" || ev.severity === "WARNING");
             if (events.length === 0) {
-                showToast("ไม่มีข้อมูล Alarm สะสมสำหรับซิงค์", false);
+                if (!isAutomatic) showToast("ไม่มีข้อมูล Alarm สะสมสำหรับซิงค์", false);
                 return;
             }
 
-            showToast("กำลังส่งข้อมูลสะสมทุกเครื่องซิงค์ลง Google Sheets...");
+            if (!isAutomatic) {
+                showToast("กำลังส่งข้อมูลสะสมทุกเครื่องซิงค์ลง Google Sheets...");
+            } else {
+                showToast("อัปโหลด Log สำเร็จ กำลังซิงค์ลง Google Sheet อัตโนมัติ...");
+            }
 
             const payload = {
                 selectedMachine: "ALL",
@@ -1336,9 +1342,9 @@ function formatMinutesToHoursOrMinutes(totalMin) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                showToast("ซิงค์ข้อมูลทุกเครื่องลง History Data Alarm สำเร็จ!");
+                showToast("ซิงค์ข้อมูลลง History Data Alarm สำเร็จ!");
             }).catch(err => {
-                showToast("เกิดข้อผิดพลาดในการซิงค์ข้อมูล", false);
+                if (!isAutomatic) showToast("เกิดข้อผิดพลาดในการซิงค์ข้อมูล", false);
             });
         }
 
@@ -1351,7 +1357,6 @@ function formatMinutesToHoursOrMinutes(totalMin) {
 
             const csvEscape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
-            // จัดกลุ่มข้อมูลแยกตามเครื่องจักร
             const groupedByMachine = {};
             events.forEach(ev => {
                 const machine = ev.machine || "Unknown Machine";
@@ -1359,7 +1364,6 @@ function formatMinutesToHoursOrMinutes(totalMin) {
                 groupedByMachine[machine].push(ev);
             });
 
-            // เรียงชื่อเครื่องจักรแบบตัวเลข (เช่น Tongtai No.10 ก่อน No.11)
             const sortedMachines = Object.keys(groupedByMachine).sort((a, b) => 
                 a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' })
             );
@@ -1368,10 +1372,7 @@ function formatMinutesToHoursOrMinutes(totalMin) {
             const headers = ['#', 'ชื่อเครื่องจักร', 'เวลา (TIMESTAMP)', 'CODE', 'ชื่อรายการ ALARM', 'SEVERITY', 'เวลารวมสูญเสีย', 'MESSAGE'];
 
             sortedMachines.forEach((machine, mIndex) => {
-                // เพิ่มแถวหัวตารางกำกับให้แต่ละเครื่องจักร
                 csvRows.push(headers);
-
-                // เรียงรายการ Alarm ภายในเครื่องตาม Code และชื่อรายการ
                 const machineEvents = groupedByMachine[machine].sort((a, b) => 
                     String(a.code).localeCompare(String(b.code), 'en', { numeric: true }) ||
                     String(a.groupName).localeCompare(String(b.groupName), 'th')
@@ -1390,7 +1391,6 @@ function formatMinutesToHoursOrMinutes(totalMin) {
                     ]);
                 });
 
-                // เว้นบรรทัดว่างคั่นระหว่างเครื่องจักร
                 if (mIndex < sortedMachines.length - 1) {
                     csvRows.push(['', '', '', '', '', '', '', '']);
                 }
