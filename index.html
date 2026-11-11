@@ -77,7 +77,6 @@
                 height: auto !important;
                 display: block !important;
             }
-            /* Ultra-compact print styling to fit exactly on 1 page */
             #reportModal textarea, #reportModal input {
                 background: #ffffff !important;
                 color: #0f172a !important;
@@ -127,7 +126,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-base sm:text-lg tracking-wide text-white">ROUTER Analytics & Downtime</h1>
-                <p class="text-xs text-slate-400">Cumulative Sync & Extended Alarm Engine (04509, 04512, 03006, etc.)</p>
+                <p class="text-xs text-slate-400">Sheet Header Format Match: # รหัส Code, # Severity, # (จำนวนครั้งที่เกิด)</p>
             </div>
         </div>
 
@@ -257,6 +256,57 @@
             </div>
         </div>
 
+        <!-- Machine Status Breakdown Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Safety & Interlock Faults Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-cyan-400">ความผิดพลาดด้านความปลอดภัย</span>
+                        <span id="statSafetyCount" class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">0 ครั้ง</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-white">Area Sensor & Machine Stops (03502, 03901, 03900)</h4>
+                    <p class="text-xs text-slate-400 mt-1">เซ็นเซอร์พื้นที่ทำงานและคำสั่งหยุดเครื่องฉุกเฉินจากสวิตช์หรือประตูนิรภัย</p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+                    <span class="text-slate-500">Downtime สะสม:</span>
+                    <span id="statSafetyDT" class="font-bold text-rose-400">0 นาที</span>
+                </div>
+            </div>
+
+            <!-- Controller & Program Interruptions Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-amber-400">ความผิดพลาดโปรแกรมควบคุม</span>
+                        <span id="statProgramCount" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">0 ครั้ง</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-white">Program Interrupted & Manual Stop (03094, 03016)</h4>
+                    <p class="text-xs text-slate-400 mt-1">โปรแกรม G-code ถูกขัดจังหวะกลางคันหรือผู้ปฏิบัติงานกดปุ่มหยุดแมนนวล</p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+                    <span class="text-slate-500">Downtime สะสม:</span>
+                    <span id="statProgramDT" class="font-bold text-rose-400">0 นาที</span>
+                </div>
+            </div>
+
+            <!-- Tool Life & Hardware Faults Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-purple-400">อายุเครื่องมือและฮาร์ดแวร์</span>
+                        <span id="statToolCount" class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">0 ครั้ง</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-white">Tool Life, Spindle, Unclamp & Missing (03004, 04513, 04509)</h4>
+                    <p class="text-xs text-slate-400 mt-1">ดอกเราเตอร์หมดอายุ, ดอกติดคาหัวสปินเดิล (04513), ไม่มีดอกในสปินเดิล และปัญหายึดจับเครื่องมือ</p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+                    <span class="text-slate-500">Downtime สะสม:</span>
+                    <span id="statToolDT" class="font-bold text-rose-400">0 นาที</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Charts Section -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
@@ -302,7 +352,7 @@
             </div>
         </div>
 
-        <!-- Top Alarms Summary Section (Added to Main Dashboard) -->
+        <!-- Top Alarms Summary Section -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             <div class="flex items-center justify-between">
                 <div>
@@ -318,10 +368,10 @@
                     <thead>
                         <tr class="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
                             <th class="py-3 px-4">ลำดับ</th>
-                            <th class="py-3 px-4">รหัส Code</th>
-                            <th class="py-3 px-4">ชื่อรายการ Alarm</th>
-                            <th class="py-3 px-4">ระดับความรุนแรง</th>
-                            <th class="py-3 px-4 text-center">จำนวนครั้ง</th>
+                            <th class="py-3 px-4"># รหัส Code</th>
+                            <th class="py-3 px-4">กลุ่ม Alarm / Fault</th>
+                            <th class="py-3 px-4"># Severity</th>
+                            <th class="py-3 px-4 text-center"># (จำนวนครั้งที่เกิด)</th>
                             <th class="py-3 px-4 text-right">เวลารวมสูญเสีย</th>
                         </tr>
                     </thead>
@@ -340,9 +390,9 @@
                 <div>
                     <h2 class="font-bold text-sm sm:text-base text-white flex items-center space-x-2">
                         <i class="fa-solid fa-table-list text-cyan-400"></i>
-                        <span>รายการ Log เหตุการณ์และ Downtime (รองรับรหัส 04509, 04512, 03006, 05206 ฯลฯ)</span>
+                        <span>รายการ Log เหตุการณ์และ Downtime (ตรงตามรูปแบบตาราง Google Sheets)</span>
                     </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">แสดงรายการความผิดพลาดของเครื่องจักรสะสมทุกเครื่องพร้อมคำนวณระยะเวลาสูญเสียจริง</p>
+                    <p class="text-xs text-slate-400 mt-0.5">แสดงรายการความผิดพลาดของเครื่องจักรสะสมพร้อมคอลัมน์ # รหัส Code, # Severity, และ # (จำนวนครั้งที่เกิด)</p>
                 </div>
                 <div class="flex items-center space-x-2">
                     <button type="button" onclick="exportToCSV()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition border border-slate-700 flex items-center space-x-1.5 cursor-pointer">
@@ -360,14 +410,14 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-950/60 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                            <th class="py-3.5 px-4">#</th>
                             <th class="py-3.5 px-4">ชื่อเครื่องจักร</th>
-                            <th class="py-3.5 px-4">เวลา (TIMESTAMP)</th>
-                            <th class="py-3.5 px-4">CODE</th>
-                            <th class="py-3.5 px-4">ชื่อรายการ ALARM</th>
-                            <th class="py-3.5 px-4">SEVERITY</th>
+                            <th class="py-3.5 px-4">Timestamp ล่าสุด</th>
+                            <th class="py-3.5 px-4"># รหัส Code</th>
+                            <th class="py-3.5 px-4">กลุ่ม Alarm / Fault</th>
+                            <th class="py-3.5 px-4"># Severity</th>
                             <th class="py-3.5 px-4 text-right">เวลารวมสูญเสีย</th>
-                            <th class="py-3.5 px-4">รายละเอียด LOG (MESSAGE)</th>
+                            <th class="py-3.5 px-4">รายละเอียด Alarm</th>
+                            <th class="py-3.5 px-4 text-center"># (จำนวนครั้งที่เกิด)</th>
                         </tr>
                     </thead>
                     <tbody id="alarmEventsTableBody" class="divide-y divide-slate-800/60 text-xs text-slate-300">
@@ -387,7 +437,7 @@
 
     <!-- Footer -->
     <footer class="bg-slate-900 border-t border-slate-800 py-4 px-6 text-center text-xs text-slate-500">
-        ROUTER Machine Analytics & Downtime Sync Engine • Extended Alarm Engine & KPI Report
+        ROUTER Machine Analytics & Downtime Sync Engine • Sheet Header Format Match
     </footer>
 
     <!-- Report Modal -->
@@ -439,11 +489,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/80 space-y-1">
                             <label class="block font-semibold text-slate-300 text-[11px]">D1-D2: สรุปปัญหาหลักที่พบบ่อยที่สุด (Problem Description)</label>
-                            <textarea id="repProblemDesc" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">ตรวจพบความผิดพลาดวิกฤต (04509 Lenk Error, 04512 Not in Spindle, 05206 Limit Switch) และข้อผิดพลาดซ้ำซ้อนในระบบควบคุม ROUTER ส่งผลให้เกิด Downtime สะสม</textarea>
+                            <textarea id="repProblemDesc" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">ตรวจพบความผิดพลาดจาก Area Sensor (03502), Tool Stuck in Spindle / Not Clamped (04513), Machine Alarm/Stop (03500, 03901) และ Tool Life Expired (03004) ส่งผลให้เกิด Downtime สะสม</textarea>
                         </div>
                         <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/80 space-y-1">
                             <label class="block font-semibold text-slate-300 text-[11px]">D3: มาตรการควบคุมชั่วคราว (Immediate Containment Action)</label>
-                            <textarea id="repContainment" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">1. แจ้งซ่อมบำรุงตรวจสอบเซ็นเซอร์วัดความยาวเครื่องมือ (Tool Lenk) และ Spindle ทันที\n2. ตรวจสอบพิกัดแกน X ป้องกันการชน Hardware Limit Switch\n3. รีเซ็ตระบบควบคุมและเคลียร์โพรโทคอลเก่า</textarea>
+                            <textarea id="repContainment" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">1. แจ้งซ่อมบำรุงตรวจสอบหัวจับสปินเดิลและเซ็นเซอร์ Tool Unclamp (04513)\n2. ตรวจสอบโปรแกรม G-code และรอบเปลี่ยนดอกเราเตอร์ก่อนเดินเครื่อง\n3. รีเซ็ตระบบควบคุมและเคลียร์โพรโทคอลเก่า</textarea>
                         </div>
                     </div>
                 </div>
@@ -456,11 +506,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/80 space-y-1">
                             <label class="block font-semibold text-slate-300 text-[11px]">D4: วิเคราะห์สาเหตุรากเหง้า (Root Cause Analysis)</label>
-                            <textarea id="repRootCause" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">เกิดจากฝุ่นละอองสะสมบริเวณเซ็นเซอร์วัดความยาวเครื่องมือ (Tool Length Sensor) ทำให้ค่าอ่านผิดพลาดเป็นค่าสูงสุด (`2147483647`) และปัญหารูทีนโปรแกรม G-code</textarea>
+                            <textarea id="repRootCause" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">เกิดจากปัญหาดอกเราเตอร์ติดคาหัวสปินเดิล (Tool Stuck/Not Clamped) แรงดันลมหรือเซ็นเซอร์จับยึดไม่สมบูรณ์ ประกอบกับ Area sensor Block และ Tool life ครบกำหนด</textarea>
                         </div>
                         <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/80 space-y-1">
                             <label class="block font-semibold text-slate-300 text-[11px]">D5-D6: มาตรการแก้ไขถาวรและการป้องกันการเกิดซ้ำ (Permanent Action)</label>
-                            <textarea id="repPermanentAction" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">1. กำหนดรอบทำความสะอาดและเป่าลมทำความสะอาด Tool Length Sensor ทุกกะการผลิต\n2. อัปเดตโปรแกรมตรวจสอบ Tolerance ในระบบ G-code\n3. สอบเทียบซอฟต์แวร์ลิมิตสวิตช์แกน X ใหม่</textarea>
+                            <textarea id="repPermanentAction" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">1. ทำความสะอาด Collet และ Snout Spindle ป้องกันเศษฝุ่นสะสมทำให้ดอกติดคา\n2. ตั้งระบบเตือน Tool Life ล่วงหน้าก่อนดอกเราเตอร์หมดอายุ\n3. อัปเดตตารางตรวจสอบระบบจับยึดเครื่องมือประจำสัปดาห์</textarea>
                         </div>
                     </div>
                 </div>
@@ -475,10 +525,10 @@
                             <thead>
                                 <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
                                     <th class="p-2">ลำดับ</th>
-                                    <th class="p-2">รหัส Code</th>
-                                    <th class="p-2">ชื่อรายการ Alarm</th>
-                                    <th class="p-2">ระดับความรุนแรง</th>
-                                    <th class="p-2 text-center">จำนวนครั้ง</th>
+                                    <th class="p-2"># รหัส Code</th>
+                                    <th class="p-2">กลุ่ม Alarm / Fault</th>
+                                    <th class="p-2"># Severity</th>
+                                    <th class="p-2 text-center"># (จำนวนครั้งที่เกิด)</th>
                                     <th class="p-2 text-right">เวลารวมสูญเสีย</th>
                                 </tr>
                             </thead>
@@ -577,7 +627,7 @@
                     <div class="flex items-center justify-between">
                         <h4 class="font-bold text-sm text-indigo-400 flex items-center space-x-2">
                             <i class="fa-solid fa-code"></i>
-                            <span>โค้ด Google Apps Script (Code.gs) - รองรับ Extended Alarm Codes</span>
+                            <span>โค้ด Google Apps Script (Code.gs) - รูปแบบตรงตามภาพต้นแบบ (คอลัมน์ A ถึง H พร้อมเส้นตาราง)</span>
                         </h4>
                         <button type="button" onclick="copyAppsScriptCode()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-medium transition flex items-center space-x-1.5 shadow-lg shadow-indigo-600/20 cursor-pointer">
                             <i class="fa-solid fa-copy"></i>
@@ -589,7 +639,7 @@
                         <pre id="gasCodeDisplay">
 // =================================================================
 // Google Apps Script for ROUTER Machine Alarm &amp; Downtime Sync Engine
-// รองรับการดึงข้อมูลกลับระบบอัตโนมัติแบบ Real-time Sync &amp; Extended Alarms
+// รองรับโครงสร้างคอลัมน์ตรงตามภาพต้นแบบ (A-H) พร้อมใส่เส้นตาราง
 // =================================================================
 
 function doGet(e) {
@@ -627,7 +677,7 @@ function doGet(e) {
     if (sheet) {
       var lastRow = sheet.getLastRow();
       if (lastRow &gt;= 2) {
-        var data = sheet.getRange(1, 1, lastRow, 7).getValues();
+        var data = sheet.getRange(1, 1, lastRow, 8).getValues();
         data.forEach(function(row) {
           var machine = row[0] ? row[0].toString().trim() : "";
           var timestamp = row[1] ? row[1].toString().trim() : "";
@@ -636,6 +686,7 @@ function doGet(e) {
           var severity = row[4] ? row[4].toString().toUpperCase().trim() : "";
           var downtimeStr = row[5] ? row[5].toString().trim() : "";
           var message = row[6] ? row[6].toString().trim() : "";
+          var countVal = Number(row[7]) || 1;
 
           if (machine &amp;&amp; machine !== "ชื่อเครื่องจักร" &amp;&amp; code) {
             var dtMin = 0;
@@ -647,15 +698,17 @@ function doGet(e) {
               dtMin = Number(downtimeStr) || 0;
             }
 
-            events.push({
-              machine: machine,
-              timestamp: timestamp,
-              code: code,
-              groupName: groupName,
-              severity: severity || "WARNING",
-              downtimeMinutes: dtMin,
-              message: message
-            });
+            for (var c = 0; c &lt; countVal; c++) {
+              events.push({
+                machine: machine,
+                timestamp: timestamp,
+                code: code,
+                groupName: groupName,
+                severity: severity || "WARNING",
+                downtimeMinutes: dtMin / countVal,
+                message: message
+              });
+            }
           }
         });
       }
@@ -678,16 +731,45 @@ function doPost(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var payload = JSON.parse((e &amp;&amp; e.postData &amp;&amp; e.postData.contents) || "{}");
-    var rawEvents = payload.events || [];
+    
+    if (payload.action === "submitKPIReport") {
+      var reportSheet = ss.getSheetByName("KPI Reports");
+      if (!reportSheet) {
+        reportSheet = ss.insertSheet("KPI Reports");
+        reportSheet.appendRow([
+          "วันที่ส่งรายงาน", "เครื่องจักร", "เวลารวมสูญเสีย", "Critical Count", 
+          "D1-D2: Problem Description", "D3: Containment", "D4: Root Cause", "D5-D6: Permanent Action"
+        ]);
+        reportSheet.getRange(1, 1, 1, 8).setBackground("#b4c6e7").setFontWeight("bold");
+      }
+      
+      reportSheet.appendRow([
+        payload.timestamp || new Date().toLocaleString("th-TH"),
+        payload.machine || "ALL",
+        formatMinutesToHoursOrMinutes(payload.totalDowntimeMinutes || 0),
+        payload.criticalCount || 0,
+        payload.problemDesc || "",
+        payload.containment || "",
+        payload.rootCause || "",
+        payload.permanentAction || ""
+      ]);
 
+      return ContentService.createTextOutput(JSON.stringify({
+        result: "success",
+        message: "บันทึก KPI Report ลงแท็บ KPI Reports สำเร็จ"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var rawEvents = payload.events || [];
     var TARGET_SHEET_NAME = "History Data Alarm";
     var targetSheet = ss.getSheetByName(TARGET_SHEET_NAME);
     if (!targetSheet) targetSheet = ss.insertSheet(TARGET_SHEET_NAME);
 
+    // กำหนด Headers คอลัมน์ A ถึง H ตรงตามภาพตัวอย่าง
     var headers = [
       "ชื่อเครื่องจักร", "Timestamp ล่าสุด",
-      "รหัส Code", "กลุ่ม Alarm / Fault", "Severity",
-      "เวลารวมสูญเสีย", "รายละเอียด Alarm (จำนวนครั้งที่เกิด)"
+      "# รหัส Code", "กลุ่ม Alarm / Fault", "# Severity",
+      "เวลารวมสูญเสีย", "รายละเอียด Alarm", "# (จำนวนครั้งที่เกิด)"
     ];
 
     function cleanText(value, fallback) {
@@ -721,12 +803,17 @@ function doPost(e) {
       var msg = (ev.message || "").toString().toLowerCase();
       
       return sev === "CRITICAL" || sev === "WARNING" ||
-             code === "04509" || code === "04512" || code === "03006" || 
-             code === "05206" || code === "03506" || code === "03902" ||
+             code === "04509" || code === "04512" || code === "04513" || code === "03006" || 
+             code === "05206" || code === "03502" || code === "03500" ||
+             code === "03901" || code === "03900" || code === "03094" ||
+             code === "03016" || code === "03004" ||
              msg.indexOf("alarm") !== -1 || msg.indexOf("error") !== -1 ||
              msg.indexOf("sensor") !== -1 || msg.indexOf("interrupted") !== -1 ||
              msg.indexOf("timeout") !== -1 || msg.indexOf("broken") !== -1 ||
-             msg.indexOf("lenk") !== -1 || msg.indexOf("limit switch") !== -1;
+             msg.indexOf("lenk") !== -1 || msg.indexOf("limit switch") !== -1 ||
+             msg.indexOf("area sensor") !== -1 || msg.indexOf("machine stop") !== -1 ||
+             msg.indexOf("clamped") !== -1 || msg.indexOf("spindle") !== -1 ||
+             msg.indexOf("tool not") !== -1 || msg.indexOf("stuck") !== -1;
     });
 
     incomingEvents.forEach(function(item) {
@@ -745,12 +832,14 @@ function doPost(e) {
           groupName: alarmName,
           severity: cleanText(item.severity, "WARNING"),
           totalDowntime: 0,
+          count: 0,
           message: cleanText(item.message)
         };
       }
 
       var agg = machineRows[machine][key];
       agg.totalDowntime += Number(item.downtimeMinutes || 0) || 0;
+      agg.count += 1;
       if (item.timestamp) agg.timestamp = latestTimestamp(agg.timestamp, item.timestamp);
       if (severityRank(item.severity) &gt; severityRank(agg.severity)) agg.severity = item.severity;
       if (item.message) agg.message = item.message;
@@ -770,8 +859,12 @@ function doPost(e) {
       if (!keys.length) return;
 
       var headerRowNumber = outputRows.length + 1;
-      outputRows.push(headers.slice());
-      headerRows.push(headerRowNumber);
+      outputRows.push([
+        "ชื่อเครื่องจักร", "Timestamp ล่าสุด",
+        "# รหัส Code", "กลุ่ม Alarm / Fault", "# Severity",
+        "เวลารวมสูญเสีย", "รายละเอียด Alarm", "# (จำนวนครั้งที่เกิด)"
+      ]);
+      headerRows.push({ type: "header", row: headerRowNumber });
 
       keys.forEach(function(key) {
         var item = machineRows[machine][key];
@@ -782,34 +875,44 @@ function doPost(e) {
           item.groupName,
           item.severity,
           formatMinutesToHoursOrMinutes(item.totalDowntime),
-          item.message
+          item.message !== "-" &amp;&amp; item.message !== "" ? item.message : item.groupName,
+          item.count
         ]);
       });
 
-      outputRows.push(["", "", "", "", "", "", ""]);
+      outputRows.push(["", "", "", "", "", "", "", ""]);
     });
 
     targetSheet.clearContents();
     targetSheet.clearFormats();
 
     if (outputRows.length &gt; 0) {
-      targetSheet.getRange(1, 1, outputRows.length, headers.length).setValues(outputRows);
+      var dataRange = targetSheet.getRange(1, 1, outputRows.length, headers.length);
+      dataRange.setValues(outputRows);
 
-      headerRows.forEach(function(rowNumber) {
-        targetSheet.getRange(rowNumber, 1, 1, headers.length)
-          .setBackground("#c6d9f1")
-          .setFontColor("#000000")
-          .setFontWeight("bold");
+      // ใส่เส้นตาราง (Borders) ทุกเซลล์ในตารางอัตโนมัติ
+      dataRange.setBorder(true, true, true, true, true, true, "#d9d9d9", SpreadsheetApp.BorderStyle.SOLID);
+
+      headerRows.forEach(function(item) {
+        if (item.type === "header") {
+          targetSheet.getRange(item.row, 1, 1, headers.length)
+            .setBackground("#1e6b3b") // สีเขียวเข้มสไตล์ตาราง Google Sheets
+            .setFontColor("#ffffff")
+            .setFontWeight("bold")
+            .setHorizontalAlignment("center");
+        }
       });
 
+      targetSheet.getRange(1, 3, outputRows.length, 1).setHorizontalAlignment("center");
       targetSheet.getRange(1, 5, outputRows.length, 1).setHorizontalAlignment("center");
       targetSheet.getRange(1, 6, outputRows.length, 1).setHorizontalAlignment("right");
+      targetSheet.getRange(1, 8, outputRows.length, 1).setHorizontalAlignment("center");
     }
 
     return ContentService.createTextOutput(JSON.stringify({
       result: "success",
       machines: machineNames.length,
-      message: "ล้างข้อมูลซ้ำและจัดเรียงบล็อกเครื่องจักรใหม่เรียบร้อยแล้ว"
+      message: "อัปเดตโครงสร้างตารางตรงตามภาพตัวอย่างเรียบร้อยแล้ว"
     })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
@@ -1175,25 +1278,28 @@ function formatMinutesToHoursOrMinutes(totalMin) {
         }
 
         function extractAlarmTitle(msg, code) {
-            if (code === "04509" || msg.includes("LENK ERROR")) return "Tool Lenk Error (04509)";
-            if (code === "04512" || msg.includes("NOT IN SPINDLE")) return "Tool Not In Spindle (04512)";
-            if (code === "03006" || msg.includes("Sequence routine faulty")) return "Sequence Routine Faulty (03006)";
-            if (code === "05206" || msg.includes("limit switch")) return "Hardware Limit Switch (05206)";
-            if (code === "03506" || msg.includes("Spindle cooling")) return "Spindle Cooling Warning (03506)";
-            if (code === "03902" || msg.includes("Light barrier")) return "Light Barrier Safety (03902)";
+            let clean = msg.trim();
+            if (code) {
+                clean = clean.replace(new RegExp("\\(" + code + "\\)", "g"), "").replace(new RegExp("^" + code + "\\s*[:-]?\\s*"), "").trim();
+            }
             
-            if (msg.includes("Machine alarm") || msg.includes("Emergency")) return "Machine Emergency Stop";
-            if (msg.includes("Area sensor")) return "Area Sensor";
-            if (msg.includes("Broken drill data")) return "Broken Drill Data";
-            if (msg.includes("Program interrupted")) return "Program Interrupted";
-            if (msg.includes("Aborting with <ESC>")) return "Program Aborted (ESC)";
-            if (msg.includes("Dead lock")) return "Dead lock; GDPtr";
-            if (msg.includes("Internal data error")) return "Internal Data Error";
-            if (msg.includes("DIAMETER ERROR")) return "Diameter Error";
+            const lowMsg = clean.toLowerCase();
+            if (code === "03502" || lowMsg.includes("area sensor")) return "Area Sensor Block";
+            if (code === "03500" || lowMsg.includes("machine alarm")) return "Machine Alarm Block";
+            if (code === "03901" || lowMsg.includes("machine stop")) return "Machine Stop Block";
+            if (code === "03900" || lowMsg.includes("stopping inputs")) return "Machine Stopping Inputs";
+            if (code === "03094" || lowMsg.includes("program interrupted")) return "Program Interrupted";
+            if (code === "03016" || lowMsg.includes("stop block")) return "Manual Stop Block";
+            if (code === "03004" || lowMsg.includes("tool life")) return "Tool Life Expired";
+            if (code === "04509" || lowMsg.includes("lenk error")) return "Tool Lenk Error";
+            if (code === "04512" || lowMsg.includes("not in spindle")) return "Tool Not In Spindle";
+            if (code === "04513" || lowMsg.includes("clamped") || lowMsg.includes("stuck") || lowMsg.includes("unclamp")) return "Tool Stuck in Spindle / Not Clamped";
+            if (lowMsg.includes("broken") || lowMsg.includes("drill broken") || lowMsg.includes("tool break")) return "Tool Drill Broken / Broken Drill";
+            if (code === "03006" || lowMsg.includes("sequence routine")) return "Sequence Routine Faulty";
+            if (code === "05206" || lowMsg.includes("limit switch")) return "Hardware Limit Switch";
             
-            let clean = msg.split(':')[0].trim();
-            if (clean.length > 30) clean = clean.substring(0, 30) + "...";
-            return clean || ("Alarm Code " + code);
+            if (clean.length > 70) clean = clean.substring(0, 70) + "...";
+            return clean || "Alarm Fault";
         }
 
         function parseLogContent(content) {
@@ -1214,20 +1320,18 @@ function formatMinutesToHoursOrMinutes(totalMin) {
                     const code = match[2];
                     const msg = match[5];
                     const dateObj = parseLogTimestamp(timeStr);
+                    const lowMsg = msg.toLowerCase();
 
                     let severity = "INFO";
                     if (
-                        code === "04509" || code === "04512" || code === "03006" || code === "05206" ||
-                        msg.includes("Machine alarm") || msg.includes("Emergency") || msg.includes("Dead lock") || 
-                        msg.includes("Broken drill data") || msg.includes("LENK ERROR") || 
-                        msg.includes("Internal data error") || msg.includes("DIAMETER ERROR")
+                        code === "03500" || code === "03901" || code === "03900" ||
+                        code === "04509" || code === "04512" || code === "04513" || code === "03006" || code === "05206" ||
+                        lowMsg.includes("machine alarm") || lowMsg.includes("emergency") || lowMsg.includes("clamped") || lowMsg.includes("stuck") || lowMsg.includes("broken")
                     ) {
                         severity = "CRITICAL";
                     } else if (
-                        code === "03506" || code === "03902" ||
-                        msg.includes("Area sensor") || msg.includes("Aborting with <ESC>") || 
-                        msg.includes("Program interrupted") || msg.includes("NOT IN SPINDLE") || 
-                        msg.includes("NOT ALL TOOL OUT")
+                        code === "03502" || code === "03094" || code === "03016" || code === "03004" ||
+                        lowMsg.includes("area sensor") || lowMsg.includes("program interrupted") || lowMsg.includes("tool life")
                     ) {
                         severity = "WARNING";
                     }
@@ -1277,7 +1381,7 @@ function formatMinutesToHoursOrMinutes(totalMin) {
             allProcessedEvents = allProcessedEvents.concat(processed);
 
             renderDashboard();
-            showToast(`โหลดและประมวลผลไฟล์ของ ${targetMachine} สำเร็จ (${processed.length} รายการ)`);
+            showToast(`โหลดและดึงรายละเอียด Log ของ ${targetMachine} สำเร็จ (${processed.length} รายการ)`);
 
             if (googleSheetsWebAppUrl) {
                 syncDataToGoogleSheets(true);
@@ -1323,9 +1427,46 @@ function formatMinutesToHoursOrMinutes(totalMin) {
             const kpiCritSub = document.getElementById('kpiCriticalSub');
             if (kpiCritSub) kpiCritSub.innerText = `Critical: ${criticalCount} ครั้ง`;
 
+            renderCategoryBreakdown(events);
             renderTable(events);
             renderTopAlarmsSummary(events);
             renderChartsData(events);
+        }
+
+        function renderCategoryBreakdown(events) {
+            let safetyCount = 0, safetyDT = 0;
+            let programCount = 0, programDT = 0;
+            let toolCount = 0, toolDT = 0;
+
+            events.forEach(ev => {
+                const code = String(ev.code);
+                const gName = ev.groupName.toLowerCase();
+                if (code === "03502" || code === "03901" || code === "03900" || gName.includes("sensor") || gName.includes("stop")) {
+                    safetyCount++;
+                    safetyDT += ev.downtimeMinutes;
+                } else if (code === "03094" || code === "03016" || gName.includes("interrupted") || gName.includes("manual")) {
+                    programCount++;
+                    programDT += ev.downtimeMinutes;
+                } else if (code === "03004" || code === "04509" || code === "04512" || code === "04513" || gName.includes("tool") || gName.includes("spindle") || gName.includes("clamped") || gName.includes("stuck")) {
+                    toolCount++;
+                    toolDT += ev.downtimeMinutes;
+                }
+            });
+
+            const elSafetyC = document.getElementById('statSafetyCount');
+            const elSafetyD = document.getElementById('statSafetyDT');
+            if (elSafetyC) elSafetyC.innerText = `${safetyCount} ครั้ง`;
+            if (elSafetyD) elSafetyD.innerText = formatDowntimeDisplay(safetyDT);
+
+            const elProgC = document.getElementById('statProgramCount');
+            const elProgD = document.getElementById('statProgramDT');
+            if (elProgC) elProgC.innerText = `${programCount} ครั้ง`;
+            if (elProgD) elProgD.innerText = formatDowntimeDisplay(programDT);
+
+            const elToolC = document.getElementById('statToolCount');
+            const elToolD = document.getElementById('statToolDT');
+            if (elToolC) elToolC.innerText = `${toolCount} ครั้ง`;
+            if (elToolD) elToolD.innerText = formatDowntimeDisplay(toolDT);
         }
 
         function renderTopAlarmsSummary(events) {
@@ -1393,21 +1534,49 @@ function formatMinutesToHoursOrMinutes(totalMin) {
                 return;
             }
 
+            // Aggregate events by machine + code + groupName for table display matching Sheet
+            const aggMap = {};
+            events.forEach(ev => {
+                const key = `${ev.machine}|||${ev.code}|||${ev.groupName}`;
+                if (!aggMap[key]) {
+                    aggMap[key] = {
+                        machine: ev.machine,
+                        timestamp: ev.timestamp,
+                        code: ev.code,
+                        groupName: ev.groupName,
+                        severity: ev.severity,
+                        totalDowntime: 0,
+                        count: 0,
+                        message: ev.message
+                    };
+                }
+                aggMap[key].totalDowntime += ev.downtimeMinutes;
+                aggMap[key].count += 1;
+                if (ev.timestamp) aggMap[key].timestamp = ev.timestamp; // latest
+                if (ev.severity === "CRITICAL") aggMap[key].severity = "CRITICAL";
+                if (ev.message) aggMap[key].message = ev.message;
+            });
+
+            const rows = Object.values(aggMap).sort((a, b) => 
+                a.machine.localeCompare(b.machine, 'en', { numeric: true }) ||
+                String(a.code).localeCompare(String(b.code), 'en', { numeric: true })
+            );
+
             let html = "";
-            events.forEach((ev, idx) => {
-                const badgeColor = ev.severity === "CRITICAL" ? "bg-rose-500/20 text-rose-400 border-rose-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30";
+            rows.forEach((item) => {
+                const badgeColor = item.severity === "CRITICAL" ? "bg-rose-500/20 text-rose-400 border-rose-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30";
                 html += `
                     <tr class="hover:bg-slate-800/40 transition">
-                        <td class="py-3 px-4 font-mono text-slate-400">${idx + 1}</td>
-                        <td class="py-3 px-4 font-semibold text-cyan-300">${ev.machine}</td>
-                        <td class="py-3 px-4 font-mono text-slate-300">${ev.timestamp}</td>
-                        <td class="py-3 px-4 font-mono text-slate-400">${ev.code}</td>
-                        <td class="py-3 px-4 font-medium text-white">${ev.groupName}</td>
+                        <td class="py-3 px-4 font-semibold text-cyan-300">${item.machine}</td>
+                        <td class="py-3 px-4 font-mono text-slate-300">${item.timestamp}</td>
+                        <td class="py-3 px-4 font-mono text-slate-400">${item.code}</td>
+                        <td class="py-3 px-4 font-medium text-white">${item.groupName}</td>
                         <td class="py-3 px-4">
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${ev.severity}</span>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${badgeColor}">${item.severity}</span>
                         </td>
-                        <td class="py-3 px-4 text-right font-mono font-bold text-rose-400">${formatDowntimeDisplay(ev.downtimeMinutes)}</td>
-                        <td class="py-3 px-4 text-slate-400 truncate max-w-[250px]" title="${ev.message}">${ev.message}</td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-rose-400">${formatDowntimeDisplay(item.totalDowntime)}</td>
+                        <td class="py-3 px-4 text-slate-400 truncate max-w-[250px]" title="${item.message}">${item.message !== "-" && item.message !== "" ? item.message : item.groupName}</td>
+                        <td class="py-3 px-4 text-center font-mono font-bold text-cyan-400">${item.count}</td>
                     </tr>
                 `;
             });
@@ -1544,7 +1713,7 @@ function formatMinutesToHoursOrMinutes(totalMin) {
             );
 
             const csvRows = [];
-            const headers = ['#', 'ชื่อเครื่องจักร', 'เวลา (TIMESTAMP)', 'CODE', 'ชื่อรายการ ALARM', 'SEVERITY', 'เวลารวมสูญเสีย', 'MESSAGE'];
+            const headers = ['ชื่อเครื่องจักร', 'Timestamp ล่าสุด', '# รหัส Code', 'กลุ่ม Alarm / Fault', '# Severity', 'เวลารวมสูญเสีย', 'รายละเอียด Alarm', '# (จำนวนครั้งที่เกิด)'];
 
             sortedMachines.forEach((machine, mIndex) => {
                 csvRows.push(headers);
@@ -1553,16 +1722,16 @@ function formatMinutesToHoursOrMinutes(totalMin) {
                     String(a.groupName).localeCompare(String(b.groupName), 'th')
                 );
 
-                machineEvents.forEach((ev, i) => {
+                machineEvents.forEach((ev) => {
                     csvRows.push([
-                        i + 1,
                         ev.machine,
                         ev.timestamp,
                         ev.code,
                         ev.groupName,
                         ev.severity,
                         formatDowntimeDisplay(ev.downtimeMinutes),
-                        ev.message
+                        ev.message,
+                        1
                     ]);
                 });
 
@@ -1582,7 +1751,7 @@ function formatMinutesToHoursOrMinutes(totalMin) {
             a.click();
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 1000);
-            showToast("Export CSV เรียงแยกบล็อกเครื่องสำเร็จ");
+            showToast("Export CSV เรียงตามรูปแบบตารางสำเร็จ");
         }
 
         function clearAllData() {
